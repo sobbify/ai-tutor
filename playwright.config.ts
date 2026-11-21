@@ -18,5 +18,13 @@ export default defineConfig({
   },
   projects: [{ name: 'mobile-chrome', use: { ...devices['Pixel 7'] } }],
   // The browser-only demo build: the e2e flow needs no backend (backend has its own pytest suite).
-  webServer: { command: 'npm run build:mock && npm run preview', url: 'http://127.0.0.1:4173', reuseExistingServer: !process.env.CI },
+  // Bound to 127.0.0.1 explicitly: on CI runners "localhost" can resolve to ::1 only, and the
+  // check below would then never see the server. The build runs first, so allow it time.
+  webServer: {
+    command: 'npm run build:mock && npm run preview',
+    url: 'http://127.0.0.1:4173',
+    reuseExistingServer: !process.env.CI,
+    timeout: 180_000,
+    stdout: 'pipe',
+  },
 });
