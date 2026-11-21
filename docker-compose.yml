@@ -1,0 +1,48 @@
+# Production-style stack: PostgreSQL + AI Tutor. Put a TLS reverse proxy (Caddy, nginx, a cloud
+# load balancer) in front for HTTPS — cookies are Secure in production.
+#
+#   cp docker.env.example .env      # set POSTGRES_PASSWORD, GEMINI_API_KEYS, HOST_API_KEY
+#   (Windows: scripts\docker-check.ps1 does all of this and smoke-tests the result)
+#   docker compose up -d --build
+#   docker compose exec app python -m ai_tutor create-admin <username>
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: tutor
+      POSTGRES_USER: tutor
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tutor -d tutor"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ENVIRONMENT: production
+      DATABASE_URL: postgresql+asyncpg://tutor:${POSTGRES_PASSWORD}@db:5432/tutor
+      EVALUATOR: ${EVALUATOR:-gemini}
+      GEMINI_API_KEYS: ${GEMINI_API_KEYS:-}
+      GEMINI_BACKEND: ${GEMINI_BACKEND:-gemini}
+      GEMINI_EVAL_MODEL: ${GEMINI_EVAL_MODEL:-gemini-flash-latest,gemini-flash-lite-latest}
+      GEMINI_LIVE_MODEL: ${GEMINI_LIVE_MODEL:-gemini-3.8-live}
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
+      SCHOOL_TIMEZONE: ${SCHOOL_TIMEZONE:-Asia/Kolkata}
+      HOST_API_KEY: ${HOST_API_KEY:-}
+    volumes:
+      - voice:/app/backend/data/voice   # Gemini voice cache: recorded once, kept across deploys
+    ports:
+      - "8000:8000"
+
+volumes:
+  pgdata:
+  voice:

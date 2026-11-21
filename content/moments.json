@@ -1,0 +1,1262 @@
+{
+  "$comment": "Practice scripts (draft for academic-team review) — single source for the browser mock and the FastAPI backend. kind: programme (the 15-day course, by week) | anytime (rehearse on demand) | baseline (first friendly chat). minLevel: 1 calm · 2 surprise follow-up · 3 worried · 4 upset or fast-talking. knownFixes.pattern is a case-insensitive regex. Bump \"version\" to push script changes into existing databases.",
+  "version": 2,
+  "learner": {
+    "firstName": "Priya"
+  },
+  "moments": [
+    {
+      "id": "morning-greeting",
+      "possessive": "her",
+      "title": "Morning Greeting at Drop-off",
+      "order": 1,
+      "icon": "sun",
+      "scene": "Ria’s mother at the gate, in Ria’s first week of school.",
+      "character": {
+        "name": "Ria’s mother",
+        "role": "Parent",
+        "initials": "RM",
+        "posterUrl": null
+      },
+      "turns": [
+        {
+          "id": "mg-1",
+          "parentLine": "Good morning, Priya ma’am! Ria is a little nervous today.",
+          "hint": {
+            "kind": "sentence",
+            "text": "Good morning! Don’t worry, she will settle in quickly. We will start with her favourite songs."
+          },
+          "videoUrl": null,
+          "demoReply": "Good morning. Don’t worry, she settle quickly.",
+          "knownFixes": [
+            {
+              "pattern": "\\bshe settle\\b",
+              "wrong": "settle",
+              "better": "She will settle in quickly."
+            }
+          ],
+          "minLevel": 1
+        },
+        {
+          "id": "mg-med",
+          "parentLine": "Ma’am, please give her this cough syrup at eleven. Five ml.",
+          "hint": {
+            "kind": "sentence",
+            "text": "Sure. Just to confirm: five ml of the cough syrup at eleven o’clock?"
+          },
+          "videoUrl": null,
+          "demoReply": "Okay ma’am, I give her syrup at eleven.",
+          "knownFixes": [
+            {
+              "pattern": "\\bI give\\b",
+              "wrong": "I give",
+              "better": "Sure. Just to confirm: five ml of the cough syrup at eleven o’clock?"
+            }
+          ],
+          "minLevel": 1
+        },
+        {
+          "id": "mg-2",
+          "parentLine": "She cried a lot last night about school.",
+          "hint": {
+            "kind": "sentence",
+            "text": "That is normal in the first week. Many children feel this way, and it gets better every day."
+          },
+          "videoUrl": null,
+          "demoReply": "That is normal in the first week. Many children feel this way, and it gets better every day.",
+          "minLevel": 1
+        },
+        {
+          "id": "mg-allergy",
+          "parentLine": "Oh, and I forgot — she is allergic to peanuts.",
+          "hint": {
+            "kind": "sentence",
+            "text": "Thank you for telling me. Just to confirm: no peanuts at all. I will tell the nanny too."
+          },
+          "videoUrl": null,
+          "demoReply": "Thank you. No peanuts, I will tell to nanny.",
+          "knownFixes": [
+            {
+              "pattern": "\\btell to\\b",
+              "wrong": "tell to",
+              "better": "Thank you for telling me. No peanuts at all. I will tell the nanny too."
+            }
+          ],
+          "minLevel": 2
+        },
+        {
+          "id": "mg-3",
+          "parentLine": "Can I stay with her for ten minutes?",
+          "hint": {
+            "kind": "sentence",
+            "text": "Yes, you can stay for a few minutes. Then a short, happy goodbye works best."
+          },
+          "videoUrl": null,
+          "demoReply": "Yes, you can stay. Then short goodbye is best.",
+          "knownFixes": [
+            {
+              "pattern": "\\bshort goodbye is best\\b",
+              "wrong": "short goodbye is best",
+              "better": "A short, happy goodbye works best."
+            }
+          ],
+          "minLevel": 1
+        },
+        {
+          "id": "mg-pickup",
+          "parentLine": "Her uncle will pick her up today, not me.",
+          "hint": {
+            "kind": "sentence",
+            "text": "Thank you. Is he on the pickup list? Please tell me his name, and I will check his ID."
+          },
+          "videoUrl": null,
+          "demoReply": "Okay. He is in the pickup list? Tell me his name please.",
+          "knownFixes": [
+            {
+              "pattern": "\\bin the pickup list\\b",
+              "wrong": "in the pickup list",
+              "better": "Is he on the pickup list? Please tell me his name."
+            }
+          ],
+          "minLevel": 2
+        },
+        {
+          "id": "mg-4",
+          "parentLine": "What if she asks for me during the day?",
+          "hint": {
+            "kind": "sentence",
+            "text": "We will comfort her and keep her busy. I will call you if she needs you."
+          },
+          "videoUrl": null,
+          "demoReply": "We will comfort her and keep her busy. I will call you if she needs you.",
+          "minLevel": 1
+        },
+        {
+          "id": "mg-worry",
+          "parentLine": "Last week another child pushed her. Will someone watch her properly?",
+          "hint": {
+            "kind": "sentence",
+            "text": "I understand your worry. We watch the children closely, and I will keep her near me today."
+          },
+          "videoUrl": null,
+          "demoReply": "I understand. We are watching all children closely.",
+          "knownFixes": [],
+          "minLevel": 3
+        },
+        {
+          "id": "mg-rush",
+          "parentLine": "Ma’am, I’m late for work, I can’t stay — just tell me, will she be fine or not?",
+          "hint": {
+            "kind": "sentence",
+            "text": "Yes, she will be fine. Please go, and I will message you if she needs anything."
+          },
+          "videoUrl": null,
+          "demoReply": "Yes she will be fine, you go, I message you.",
+          "knownFixes": [
+            {
+              "pattern": "\\bI message you\\b",
+              "wrong": "I message you",
+              "better": "Yes, she will be fine. Please go, and I will message you if she needs anything."
+            }
+          ],
+          "minLevel": 4
+        },
+        {
+          "id": "mg-5",
+          "parentLine": "Thank you, ma’am. What time should I pick her up?",
+          "hint": {
+            "kind": "sentence",
+            "text": "Please come at twelve thirty. I will tell you how her day went."
+          },
+          "videoUrl": null,
+          "demoReply": "Please come at twelve thirty. I will tell you how her day went.",
+          "minLevel": 1
+        }
+      ],
+      "kind": "programme",
+      "week": 1,
+      "lesson": {
+        "title": "Drop-off: calm and clear",
+        "intro": "Parents share important details at the gate. Say them back so nothing is missed.",
+        "phrases": [
+          {
+            "text": "Just to confirm: five ml at eleven?",
+            "note": "Confirm medicine"
+          },
+          {
+            "text": "Is he on the pickup list?",
+            "note": "Check who picks up"
+          },
+          {
+            "text": "Thank you for telling me. No peanuts at all.",
+            "note": "Confirm an allergy"
+          },
+          {
+            "text": "Don’t worry, she will settle in quickly.",
+            "note": "Comfort a parent"
+          }
+        ],
+        "tip": "Use “will” for promises about later: “I will call you”, not “I call you”."
+      }
+    },
+    {
+      "id": "pickup-update",
+      "possessive": "his",
+      "title": "Pick-up Update",
+      "order": 2,
+      "icon": "backpack",
+      "scene": "Kabir’s father at pick-up time, asking how the day went.",
+      "character": {
+        "name": "Kabir’s father",
+        "role": "Parent",
+        "initials": "KF",
+        "posterUrl": null
+      },
+      "turns": [
+        {
+          "id": "pu-1",
+          "parentLine": "Hello ma’am! How was Kabir today?",
+          "hint": {
+            "kind": "sentence",
+            "text": "Hello! Kabir had a lovely day. He was happy and joined in everything."
+          },
+          "videoUrl": null,
+          "demoReply": "Hello! Kabir have a lovely day. He was happy and joined in everything.",
+          "knownFixes": [
+            {
+              "pattern": "\\bKabir have\\b",
+              "wrong": "have",
+              "better": "Kabir had a lovely day."
+            }
+          ],
+          "minLevel": 1
+        },
+        {
+          "id": "pu-2",
+          "parentLine": "Did he eat his lunch?",
+          "hint": {
+            "kind": "sentence",
+            "text": "Yes, he finished most of his lunch. He did not like the carrots."
+          },
+          "videoUrl": null,
+          "demoReply": "Yes, he finished most of his lunch. He do not like the carrots.",
+          "knownFixes": [
+            {
+              "pattern": "\\bhe do not\\b",
+              "wrong": "do not",
+              "better": "He did not like the carrots."
+            }
+          ],
+          "minLevel": 1
+        },
+        {
+          "id": "pu-3",
+          "parentLine": "What did the class do today?",
+          "hint": {
+            "kind": "starters",
+            "options": [
+              "We painted…",
+              "We read a story about…"
+            ]
+          },
+          "videoUrl": null,
+          "demoReply": "We painted leaves and we read a story about a little seed.",
+          "minLevel": 1
+        },
+        {
+          "id": "pu-4",
+          "parentLine": "Was he playing with other children?",
+          "hint": {
+            "kind": "sentence",
+            "text": "Yes, he played with Meera and Dev in the sand pit."
+          },
+          "videoUrl": null,
+          "demoReply": "Yes, he played with Meera and Dev in the sand pit.",
+          "minLevel": 1
+        },
+        {
+          "id": "pu-bump",
+          "parentLine": "Why is there a little mark on his arm?",
+          "hint": {
+            "kind": "sentence",
+            "text": "He bumped his arm on the slide. We put a cold pack on it, and he was fine after a few minutes."
+          },
+          "videoUrl": null,
+          "demoReply": "He bump his arm on slide but he is fine.",
+          "knownFixes": [
+            {
+              "pattern": "\\bhe bump\\b",
+              "wrong": "bump",
+              "better": "He bumped his arm on the slide, but he was fine after a few minutes."
+            }
+          ],
+          "minLevel": 2
+        },
+        {
+          "id": "pu-5",
+          "parentLine": "He says someone took his crayons.",
+          "hint": {
+            "kind": "sentence",
+            "text": "Thank you for telling me. I will check, and we will practise sharing tomorrow."
+          },
+          "videoUrl": null,
+          "demoReply": "Thank you for telling me. I will check and we practise sharing tomorrow.",
+          "knownFixes": [
+            {
+              "pattern": "\\bwe practise sharing\\b",
+              "wrong": "we practise",
+              "better": "I will check, and we will practise sharing tomorrow."
+            }
+          ],
+          "minLevel": 1
+        },
+        {
+          "id": "pu-6",
+          "parentLine": "Does he need anything for tomorrow?",
+          "hint": {
+            "kind": "sentence",
+            "text": "Please send a water bottle and a spare set of clothes."
+          },
+          "videoUrl": null,
+          "demoReply": "Please send a water bottle and spare clothes.",
+          "minLevel": 1
+        },
+        {
+          "id": "pu-quiet",
+          "parentLine": "He has been very quiet at home. Is something wrong at school?",
+          "hint": {
+            "kind": "sentence",
+            "text": "Thank you for telling me. He seems happy here, but I will watch him closely and tell you what I see."
+          },
+          "videoUrl": null,
+          "demoReply": "He is happy here only. I will watch him.",
+          "knownFixes": [],
+          "minLevel": 3
+        },
+        {
+          "id": "pu-again",
+          "parentLine": "Someone took his crayons again! This is the second time this week!",
+          "hint": {
+            "kind": "sentence",
+            "text": "I am sorry. I understand this is upsetting. I will speak to the children today and update you tomorrow."
+          },
+          "videoUrl": null,
+          "demoReply": "Sorry. I will talk to children and tell you tomorrow.",
+          "knownFixes": [],
+          "minLevel": 4
+        },
+        {
+          "id": "pu-7",
+          "parentLine": "Is there any homework?",
+          "hint": {
+            "kind": "starters",
+            "options": [
+              "There is no homework, but…",
+              "You could ask him about…"
+            ]
+          },
+          "videoUrl": null,
+          "demoReply": "There is no homework, but you can ask him about the seed story.",
+          "minLevel": 1
+        },
+        {
+          "id": "pu-8",
+          "parentLine": "Thank you so much. See you tomorrow!",
+          "hint": {
+            "kind": "sentence",
+            "text": "You are welcome. See you tomorrow, Kabir!"
+          },
+          "videoUrl": null,
+          "demoReply": "You are welcome. See you tomorrow, Kabir!",
+          "minLevel": 1
+        }
+      ],
+      "kind": "programme",
+      "week": 1,
+      "lesson": {
+        "title": "Pick-up: a two-line summary",
+        "intro": "Start with one good thing about the day, then one useful detail.",
+        "phrases": [
+          {
+            "text": "He had a lovely day. He enjoyed painting.",
+            "note": "Two-line summary"
+          },
+          {
+            "text": "He bumped his arm, but he was fine after a few minutes.",
+            "note": "A small incident, calmly"
+          },
+          {
+            "text": "Please send a water bottle tomorrow.",
+            "note": "A clear request"
+          }
+        ],
+        "tip": "Talk about today in the past tense: “He played”, “She ate”, “They painted”."
+      }
+    },
+    {
+      "id": "parent-meeting",
+      "possessive": "her",
+      "title": "Parent Meeting",
+      "order": 3,
+      "icon": "chat",
+      "scene": "A meeting with Anaya’s mother about her progress.",
+      "character": {
+        "name": "Anaya’s mother",
+        "role": "Parent",
+        "initials": "AM",
+        "posterUrl": null
+      },
+      "turns": [
+        {
+          "id": "pm-1",
+          "parentLine": "Good afternoon. Thank you for meeting me.",
+          "hint": {
+            "kind": "sentence",
+            "text": "Good afternoon! Thank you for coming. Please have a seat."
+          },
+          "videoUrl": null,
+          "demoReply": "Good afternoon! Thank you for coming. Please have a seat.",
+          "minLevel": 1
+        },
+        {
+          "id": "pm-2",
+          "parentLine": "How is Anaya settling in this term?",
+          "hint": {
+            "kind": "sentence",
+            "text": "She has settled in well. She is confident and makes friends easily."
+          },
+          "videoUrl": null,
+          "demoReply": "She has settled in well. She is confident and makes friends easily.",
+          "minLevel": 1
+        },
+        {
+          "id": "pm-3",
+          "parentLine": "Does she listen during circle time?",
+          "hint": {
+            "kind": "starters",
+            "options": [
+              "Most days she…",
+              "Sometimes she finds it hard to…"
+            ]
+          },
+          "videoUrl": null,
+          "demoReply": "Most days she listens well. Sometimes she finds it hard to wait for her turn.",
+          "minLevel": 1
+        },
+        {
+          "id": "pm-4",
+          "parentLine": "Is she talking more in English now?",
+          "hint": {
+            "kind": "sentence",
+            "text": "Yes, she uses full sentences now, especially during play."
+          },
+          "videoUrl": null,
+          "demoReply": "Yes, she use full sentences now, especially during play.",
+          "knownFixes": [
+            {
+              "pattern": "\\bshe use\\b",
+              "wrong": "use",
+              "better": "Yes, she uses full sentences now, especially during play."
+            }
+          ],
+          "minLevel": 1
+        },
+        {
+          "id": "pm-play",
+          "parentLine": "Why do they only play? When will they start proper studies?",
+          "hint": {
+            "kind": "sentence",
+            "text": "Children learn best through play. When they build with blocks, they learn numbers, shapes and teamwork."
+          },
+          "videoUrl": null,
+          "demoReply": "They learn by playing only. Blocks teach numbers.",
+          "knownFixes": [],
+          "minLevel": 2
+        },
+        {
+          "id": "pm-5",
+          "parentLine": "What about numbers? Can she do maths?",
+          "hint": {
+            "kind": "starters",
+            "options": [
+              "She can count…",
+              "She is good at…"
+            ]
+          },
+          "videoUrl": null,
+          "demoReply": "She can count to twenty and she is good at sorting shapes.",
+          "minLevel": 2
+        },
+        {
+          "id": "pm-6",
+          "parentLine": "Her writing looks very messy to me.",
+          "hint": {
+            "kind": "sentence",
+            "text": "That is normal at this age. Her grip is getting stronger every week."
+          },
+          "videoUrl": null,
+          "demoReply": "That is normal at this age. Her grip is getting stronger every week.",
+          "minLevel": 1
+        },
+        {
+          "id": "pm-7",
+          "parentLine": "How can I help her at home?",
+          "hint": {
+            "kind": "starters",
+            "options": [
+              "You could read…",
+              "Try asking her to…"
+            ]
+          },
+          "videoUrl": null,
+          "demoReply": "You could read a short story every night and try asking her to retell it.",
+          "minLevel": 1
+        },
+        {
+          "id": "pm-8",
+          "parentLine": "She doesn’t want to share her toys with her brother.",
+          "hint": {
+            "kind": "sentence",
+            "text": "We are practising turn-taking in class. A sand timer can help at home too."
+          },
+          "videoUrl": null,
+          "demoReply": "We are practising turn-taking in class. A sand timer can help at home too.",
+          "minLevel": 2
+        },
+        {
+          "id": "pm-9",
+          "parentLine": "Is there anything I should worry about?",
+          "hint": {
+            "kind": "sentence",
+            "text": "No, she is doing well. We will keep working on patience and listening."
+          },
+          "videoUrl": null,
+          "demoReply": "No, she is doing well. We will keep working on patience and listening.",
+          "minLevel": 1
+        },
+        {
+          "id": "pm-behind",
+          "parentLine": "Other children already read books. Is she falling behind?",
+          "hint": {
+            "kind": "sentence",
+            "text": "Every child learns at her own pace. Anaya is doing well, and here is one thing you can try at home."
+          },
+          "videoUrl": null,
+          "demoReply": "Every child is different. She is doing good.",
+          "knownFixes": [
+            {
+              "pattern": "\\bdoing good\\b",
+              "wrong": "doing good",
+              "better": "Every child learns at her own pace. Anaya is doing well."
+            }
+          ],
+          "minLevel": 3
+        },
+        {
+          "id": "pm-fees",
+          "parentLine": "Honestly, I’m not happy. We pay so much and I see no progress!",
+          "hint": {
+            "kind": "sentence",
+            "text": "I understand. Let me show you her work from June and from now. Then we can plan the next steps together."
+          },
+          "videoUrl": null,
+          "demoReply": "I understand. I will show you her June work and now work.",
+          "knownFixes": [],
+          "minLevel": 4
+        },
+        {
+          "id": "pm-10",
+          "parentLine": "When can we talk again?",
+          "hint": {
+            "kind": "starters",
+            "options": [
+              "We can meet again…",
+              "You can message me…"
+            ]
+          },
+          "videoUrl": null,
+          "demoReply": "We can meet again next month, and you can message me any time.",
+          "minLevel": 2
+        },
+        {
+          "id": "pm-11",
+          "parentLine": "Thank you, this was really helpful.",
+          "hint": {
+            "kind": "sentence",
+            "text": "Thank you for your support. Anaya is a joy to teach."
+          },
+          "videoUrl": null,
+          "demoReply": "Thank you for your support. Anaya is a joy to teach.",
+          "minLevel": 1
+        }
+      ],
+      "kind": "programme",
+      "week": 2,
+      "lesson": {
+        "title": "Parent meetings: strengths first",
+        "intro": "Open warmly, share a strength, then one thing to work on and one activity for home.",
+        "phrases": [
+          {
+            "text": "She is confident and makes friends easily.",
+            "note": "Start with a strength"
+          },
+          {
+            "text": "Children learn best through play.",
+            "note": "Explain play-based learning"
+          },
+          {
+            "text": "One thing you can try at home is reading together.",
+            "note": "One home activity"
+          },
+          {
+            "text": "Thank you for coming. Please have a seat.",
+            "note": "Open well"
+          }
+        ],
+        "tip": "For a child, use “she is / he has”: “She is kind.” “He has many friends.”"
+      }
+    },
+    {
+      "id": "upset-parent",
+      "possessive": "her",
+      "title": "Worried or Upset Parent",
+      "order": 4,
+      "icon": "handshake",
+      "scene": "Arjun’s mother is upset because he came home with a scraped knee.",
+      "character": {
+        "name": "Arjun’s mother",
+        "role": "Parent",
+        "initials": "AJ",
+        "posterUrl": null
+      },
+      "turns": [
+        {
+          "id": "up-1",
+          "parentLine": "Arjun came home with a hurt knee and nobody told me!",
+          "hint": {
+            "kind": "sentence",
+            "text": "I am really sorry. You should have heard it from us. Let me explain what happened."
+          },
+          "videoUrl": null,
+          "demoReply": "I am really sorry. You should have heard it from us. Let me explain what happened.",
+          "minLevel": 1
+        },
+        {
+          "id": "up-2",
+          "parentLine": "What happened exactly?",
+          "hint": {
+            "kind": "sentence",
+            "text": "He tripped while running in the playground. We cleaned the scrape and put a plaster on it."
+          },
+          "videoUrl": null,
+          "demoReply": "He tripped while running in the playground. We cleaned the scrape and put a plaster on it.",
+          "minLevel": 1
+        },
+        {
+          "id": "up-3",
+          "parentLine": "Why wasn’t anyone watching him?",
+          "hint": {
+            "kind": "starters",
+            "options": [
+              "Two teachers were…",
+              "It happened very quickly, but…"
+            ]
+          },
+          "videoUrl": null,
+          "demoReply": "Two teachers were outside. It happened very quickly, but we helped him at once.",
+          "minLevel": 1
+        },
+        {
+          "id": "up-4",
+          "parentLine": "I don’t want this to happen again.",
+          "hint": {
+            "kind": "sentence",
+            "text": "I understand. We will remind the children to walk near the steps."
+          },
+          "videoUrl": null,
+          "demoReply": "I understand. We will remind the children to walk near the steps.",
+          "minLevel": 1
+        },
+        {
+          "id": "up-extra",
+          "parentLine": "Can you give him extra attention from now on?",
+          "hint": {
+            "kind": "sentence",
+            "text": "I can’t promise extra attention for one child, but I will keep a close eye on him and update you."
+          },
+          "videoUrl": null,
+          "demoReply": "I cannot give extra attention but I will see him.",
+          "knownFixes": [],
+          "minLevel": 2
+        },
+        {
+          "id": "up-complain",
+          "parentLine": "I want to complain. Who is responsible for this?",
+          "hint": {
+            "kind": "sentence",
+            "text": "I understand. I will ask our centre head to meet you today, and I will be there too."
+          },
+          "videoUrl": null,
+          "demoReply": "I will tell to centre head to meet you.",
+          "knownFixes": [
+            {
+              "pattern": "\\btell to\\b",
+              "wrong": "tell to",
+              "better": "I understand. I will ask our centre head to meet you today."
+            }
+          ],
+          "minLevel": 3
+        },
+        {
+          "id": "up-leave",
+          "parentLine": "This is not acceptable! I’m thinking of taking him out of this school!",
+          "hint": {
+            "kind": "sentence",
+            "text": "I am sorry you feel this way. Please give us a chance to fix this. Can we meet with the centre head tomorrow?"
+          },
+          "videoUrl": null,
+          "demoReply": "Sorry you feel like this. Give us one chance please.",
+          "knownFixes": [],
+          "minLevel": 4
+        },
+        {
+          "id": "up-5",
+          "parentLine": "Will you call me next time?",
+          "hint": {
+            "kind": "sentence",
+            "text": "Yes, I will call you straight away if anything happens."
+          },
+          "videoUrl": null,
+          "demoReply": "Yes, I will call you straight away if anything happens.",
+          "minLevel": 1
+        },
+        {
+          "id": "up-6",
+          "parentLine": "Okay. Thank you for listening.",
+          "hint": {
+            "kind": "sentence",
+            "text": "Thank you for telling me. Arjun is safe with us."
+          },
+          "videoUrl": null,
+          "demoReply": "Thank you for telling me. Arjun is safe with us.",
+          "minLevel": 1
+        }
+      ],
+      "kind": "programme",
+      "week": 3,
+      "lesson": {
+        "title": "Worried parents: acknowledge, explain, next step",
+        "intro": "First show you understand, then give the facts, then say what happens next.",
+        "phrases": [
+          {
+            "text": "I understand why you are worried.",
+            "note": "Acknowledge"
+          },
+          {
+            "text": "Let me explain what happened.",
+            "note": "Explain"
+          },
+          {
+            "text": "Here is what we will do next.",
+            "note": "Next step"
+          },
+          {
+            "text": "I can’t promise that, but I can update you every day.",
+            "note": "Say no politely"
+          },
+          {
+            "text": "Let me ask our centre head to join us.",
+            "note": "Hand over politely"
+          }
+        ],
+        "tip": "Say sorry for the feeling, then the facts: “I am sorry this upset you. He tripped while running.”"
+      }
+    },
+    {
+      "id": "admission-tour",
+      "possessive": "his",
+      "title": "Admission Enquiry Tour",
+      "order": 5,
+      "icon": "school",
+      "scene": "Mr. Mehta is visiting the school before applying for his daughter.",
+      "character": {
+        "name": "Mr. Mehta",
+        "role": "Parent",
+        "initials": "MM",
+        "posterUrl": null
+      },
+      "turns": [
+        {
+          "id": "at-1",
+          "parentLine": "Hello, I would like to know about admissions for my daughter.",
+          "hint": {
+            "kind": "sentence",
+            "text": "Welcome! I am happy to show you around. How old is your daughter?"
+          },
+          "videoUrl": null,
+          "demoReply": "Welcome! I am happy to show you around. How old is your daughter?",
+          "minLevel": 1
+        },
+        {
+          "id": "at-2",
+          "parentLine": "She is three and a half. What will she learn here?",
+          "hint": {
+            "kind": "starters",
+            "options": [
+              "Children learn through…",
+              "Every day we…"
+            ]
+          },
+          "videoUrl": null,
+          "demoReply": "Children learn through play. Every day we sing, read and explore outside.",
+          "minLevel": 1
+        },
+        {
+          "id": "at-3",
+          "parentLine": "How many children are in a class?",
+          "hint": {
+            "kind": "sentence",
+            "text": "There are twenty children in each class, with two teachers."
+          },
+          "videoUrl": null,
+          "demoReply": "There are twenty children in each class, with two teachers.",
+          "minLevel": 1
+        },
+        {
+          "id": "at-4",
+          "parentLine": "Is the school safe?",
+          "hint": {
+            "kind": "sentence",
+            "text": "Yes. We have CCTV, a guard at the gate, and only known adults can pick children up."
+          },
+          "videoUrl": null,
+          "demoReply": "Yes. We have CCTV, a guard at the gate, and only known adults can pick children up.",
+          "minLevel": 1
+        },
+        {
+          "id": "at-5",
+          "parentLine": "How do you keep parents updated?",
+          "hint": {
+            "kind": "starters",
+            "options": [
+              "We share…",
+              "You will get…"
+            ]
+          },
+          "videoUrl": null,
+          "demoReply": "We share photos every week and you will get a report every term.",
+          "minLevel": 1
+        },
+        {
+          "id": "at-6",
+          "parentLine": "Thank you. What is the next step?",
+          "hint": {
+            "kind": "sentence",
+            "text": "Please fill in the form at the front desk. We will call you to book a visit day."
+          },
+          "videoUrl": null,
+          "demoReply": "Please fill in the form at the front desk. We will call you to book a visit day.",
+          "minLevel": 1
+        }
+      ],
+      "kind": "anytime",
+      "week": null,
+      "lesson": {
+        "title": "Welcome a new family",
+        "intro": "Be warm, answer simply, and ask a question back.",
+        "phrases": [
+          {
+            "text": "Welcome! I am happy to show you around.",
+            "note": "Greet"
+          },
+          {
+            "text": "Children learn through play, songs and stories.",
+            "note": "Explain the day"
+          },
+          {
+            "text": "There are twenty children in each class, with two teachers.",
+            "note": "Give a clear fact"
+          }
+        ],
+        "tip": "Ask a question back to keep it friendly: “How old is your daughter?”"
+      }
+    },
+    {
+      "id": "phone-call",
+      "title": "A Parent Calls",
+      "order": 6,
+      "icon": "phone",
+      "kind": "anytime",
+      "week": null,
+      "possessive": "his",
+      "scene": "Dev’s mother calls the school early in the morning.",
+      "character": {
+        "name": "Dev’s mother",
+        "role": "Parent",
+        "initials": "DM",
+        "posterUrl": null
+      },
+      "lesson": {
+        "title": "Phone calls: slow and clear",
+        "intro": "On the phone there is no face to help. Speak slowly and repeat names and times.",
+        "phrases": [
+          {
+            "text": "Good morning, this is Dev’s teacher. How can I help you?",
+            "note": "Answer the call"
+          },
+          {
+            "text": "Thank you for letting me know.",
+            "note": "Thank them"
+          },
+          {
+            "text": "Please send his name and photo before tomorrow.",
+            "note": "A clear request"
+          }
+        ],
+        "tip": "Repeat times to check: “Tomorrow at twelve thirty, yes?”"
+      },
+      "turns": [
+        {
+          "id": "pc-1",
+          "parentLine": "Hello, is this Dev’s class teacher?",
+          "hint": {
+            "kind": "sentence",
+            "text": "Yes, good morning. This is Dev’s teacher. How can I help you?"
+          },
+          "videoUrl": null,
+          "demoReply": "Yes, I am Dev teacher. Tell me.",
+          "knownFixes": [
+            {
+              "pattern": "\\bDev teacher\\b",
+              "wrong": "Dev teacher",
+              "better": "Yes, good morning. This is Dev’s teacher. How can I help you?"
+            }
+          ],
+          "minLevel": 1
+        },
+        {
+          "id": "pc-2",
+          "parentLine": "Dev has a fever, so he won’t come today.",
+          "hint": {
+            "kind": "sentence",
+            "text": "Oh, I am sorry to hear that. Thank you for letting me know. I hope he feels better soon."
+          },
+          "videoUrl": null,
+          "demoReply": "Oh sorry. Thank you for telling. Get well soon.",
+          "knownFixes": [],
+          "minLevel": 1
+        },
+        {
+          "id": "pc-3",
+          "parentLine": "Can you send me today’s activities?",
+          "hint": {
+            "kind": "sentence",
+            "text": "Yes, I will send you today’s activities on the class group this evening."
+          },
+          "videoUrl": null,
+          "demoReply": "Yes, I will send in evening on group.",
+          "knownFixes": [],
+          "minLevel": 1
+        },
+        {
+          "id": "pc-4",
+          "parentLine": "Also, can his grandfather pick him up tomorrow?",
+          "hint": {
+            "kind": "sentence",
+            "text": "Yes, but he must be on the pickup list. Please send his name and photo before tomorrow."
+          },
+          "videoUrl": null,
+          "demoReply": "Yes but he should be in pickup list.",
+          "knownFixes": [
+            {
+              "pattern": "\\bin pickup list\\b",
+              "wrong": "in pickup list",
+              "better": "Yes, but he must be on the pickup list. Please send his name and photo."
+            }
+          ],
+          "minLevel": 2
+        },
+        {
+          "id": "pc-5",
+          "parentLine": "Okay, thank you so much.",
+          "hint": {
+            "kind": "sentence",
+            "text": "You are welcome. Take care, and please tell Dev we miss him."
+          },
+          "videoUrl": null,
+          "demoReply": "Welcome. Take care. We miss Dev.",
+          "knownFixes": [],
+          "minLevel": 1
+        }
+      ],
+      "published": true
+    },
+    {
+      "id": "small-incident",
+      "title": "A Small Incident",
+      "order": 7,
+      "icon": "bandage",
+      "kind": "anytime",
+      "week": null,
+      "possessive": "his",
+      "scene": "Meera’s father at pick-up. Meera slipped while playing and has a small bump.",
+      "character": {
+        "name": "Meera’s father",
+        "role": "Parent",
+        "initials": "MF",
+        "posterUrl": null
+      },
+      "lesson": {
+        "title": "Small incidents, calmly",
+        "intro": "Facts first, then how the child is now, then the next step.",
+        "phrases": [
+          {
+            "text": "She slipped while playing. We put a cold pack on it right away.",
+            "note": "The facts"
+          },
+          {
+            "text": "She was playing happily again after a minute.",
+            "note": "How she is now"
+          },
+          {
+            "text": "Please watch her tonight.",
+            "note": "The next step"
+          }
+        ],
+        "tip": "Use the past tense for what happened: “She slipped”, “We cleaned it”."
+      },
+      "turns": [
+        {
+          "id": "si-1",
+          "parentLine": "What is this bump on Meera’s head?",
+          "hint": {
+            "kind": "sentence",
+            "text": "She slipped while playing and bumped her head. We put a cold pack on it right away."
+          },
+          "videoUrl": null,
+          "demoReply": "She slip while playing. We put ice.",
+          "knownFixes": [
+            {
+              "pattern": "\\bshe slip\\b",
+              "wrong": "slip",
+              "better": "She slipped while playing and bumped her head."
+            }
+          ],
+          "minLevel": 1
+        },
+        {
+          "id": "si-2",
+          "parentLine": "Did she cry a lot?",
+          "hint": {
+            "kind": "sentence",
+            "text": "She cried for a minute, and then she was playing happily again."
+          },
+          "videoUrl": null,
+          "demoReply": "She cried one minute, then she played.",
+          "knownFixes": [],
+          "minLevel": 1
+        },
+        {
+          "id": "si-3",
+          "parentLine": "Should I take her to the doctor?",
+          "hint": {
+            "kind": "sentence",
+            "text": "She was fine all day, but please watch her tonight. If she feels sick or very sleepy, please see a doctor."
+          },
+          "videoUrl": null,
+          "demoReply": "She is fine, but watch her tonight.",
+          "knownFixes": [],
+          "minLevel": 1
+        },
+        {
+          "id": "si-4",
+          "parentLine": "Why didn’t you call me?",
+          "hint": {
+            "kind": "sentence",
+            "text": "It was a small bump and she was fine, so we planned to tell you at pick-up. Next time I will call you."
+          },
+          "videoUrl": null,
+          "demoReply": "It was small, so we did not call.",
+          "knownFixes": [],
+          "minLevel": 2
+        },
+        {
+          "id": "si-5",
+          "parentLine": "Okay, thank you for telling me.",
+          "hint": {
+            "kind": "sentence",
+            "text": "Thank you for understanding. I will check on her first thing tomorrow."
+          },
+          "videoUrl": null,
+          "demoReply": "Thank you. I will check her tomorrow.",
+          "knownFixes": [],
+          "minLevel": 1
+        }
+      ],
+      "published": true
+    },
+    {
+      "id": "celebration-day",
+      "title": "Celebration Day",
+      "order": 8,
+      "icon": "star",
+      "kind": "anytime",
+      "week": null,
+      "possessive": "her",
+      "scene": "Kiara’s mother asks about the Diwali celebration at school.",
+      "character": {
+        "name": "Kiara’s mother",
+        "role": "Parent",
+        "initials": "KM",
+        "posterUrl": null
+      },
+      "lesson": {
+        "title": "Events: clear times and plans",
+        "intro": "Give the time, what to bring, and what parents can do.",
+        "phrases": [
+          {
+            "text": "It starts at ten. Please drop her by nine forty-five.",
+            "note": "Times"
+          },
+          {
+            "text": "Parents are welcome to watch.",
+            "note": "Invite"
+          },
+          {
+            "text": "She can wear traditional clothes.",
+            "note": "What to wear"
+          }
+        ],
+        "tip": "“By nine forty-five” means not later than nine forty-five."
+      },
+      "turns": [
+        {
+          "id": "cd-1",
+          "parentLine": "Ma’am, what should Kiara wear for the Diwali celebration?",
+          "hint": {
+            "kind": "sentence",
+            "text": "She can wear traditional clothes. Please avoid anything too long, so she can move easily."
+          },
+          "videoUrl": null,
+          "demoReply": "She can wear traditional dress.",
+          "knownFixes": [],
+          "minLevel": 1
+        },
+        {
+          "id": "cd-2",
+          "parentLine": "What time does the programme start?",
+          "hint": {
+            "kind": "sentence",
+            "text": "It starts at ten. Please drop her by nine forty-five."
+          },
+          "videoUrl": null,
+          "demoReply": "It is starting at ten.",
+          "knownFixes": [],
+          "minLevel": 1
+        },
+        {
+          "id": "cd-3",
+          "parentLine": "Can parents come and watch?",
+          "hint": {
+            "kind": "sentence",
+            "text": "Yes, parents are welcome. Seats are in the hall, and the show lasts about an hour."
+          },
+          "videoUrl": null,
+          "demoReply": "Yes, parents can come. It is one hour.",
+          "knownFixes": [],
+          "minLevel": 1
+        },
+        {
+          "id": "cd-4",
+          "parentLine": "Do we need to send any sweets?",
+          "hint": {
+            "kind": "sentence",
+            "text": "No need, thank you. We are serving healthy snacks to all the children."
+          },
+          "videoUrl": null,
+          "demoReply": "No need. We give snacks.",
+          "knownFixes": [],
+          "minLevel": 2
+        },
+        {
+          "id": "cd-5",
+          "parentLine": "Okay, see you on Friday!",
+          "hint": {
+            "kind": "sentence",
+            "text": "See you on Friday. Kiara will love it!"
+          },
+          "videoUrl": null,
+          "demoReply": "See you Friday.",
+          "knownFixes": [],
+          "minLevel": 1
+        }
+      ],
+      "published": true
+    },
+    {
+      "id": "hello-elsa",
+      "title": "Say Hello to ELSA",
+      "order": 9,
+      "icon": "chat",
+      "kind": "baseline",
+      "week": null,
+      "possessive": "her",
+      "scene": "A friendly first chat. Nothing is scored — ELSA just gets to know you.",
+      "character": {
+        "name": "ELSA",
+        "role": "Coach",
+        "initials": "EL",
+        "posterUrl": null
+      },
+      "lesson": null,
+      "turns": [
+        {
+          "id": "he-1",
+          "parentLine": "Hi! I’m ELSA. It’s lovely to meet you. Tell me a little about your class.",
+          "hint": {
+            "kind": "starters",
+            "options": [
+              "I teach…",
+              "My class has…"
+            ]
+          },
+          "videoUrl": null,
+          "demoReply": "I teach Pre-K. My class has eighteen children.",
+          "knownFixes": [],
+          "minLevel": 1
+        },
+        {
+          "id": "he-2",
+          "parentLine": "What do you enjoy most about being a teacher?",
+          "hint": {
+            "kind": "starters",
+            "options": [
+              "I enjoy…",
+              "My favourite part is…"
+            ]
+          },
+          "videoUrl": null,
+          "demoReply": "I enjoy when children learn new words.",
+          "knownFixes": [],
+          "minLevel": 1
+        },
+        {
+          "id": "he-3",
+          "parentLine": "Think of a parent you spoke to this week. What did you talk about?",
+          "hint": {
+            "kind": "starters",
+            "options": [
+              "A parent asked me…",
+              "We talked about…"
+            ]
+          },
+          "videoUrl": null,
+          "demoReply": "A parent asked me about lunch.",
+          "knownFixes": [],
+          "minLevel": 1
+        }
+      ],
+      "published": true
+    }
+  ]
+}

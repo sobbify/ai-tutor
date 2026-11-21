@@ -1,0 +1,45 @@
+name: CI
+on: [push, pull_request]
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+
+  backend:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: backend } }
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env: { POSTGRES_USER: tutor, POSTGRES_PASSWORD: tutor, POSTGRES_DB: tutor_test }
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U tutor" --health-interval 5s --health-timeout 3s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -r requirements-dev.txt
+      - run: ruff check src tests && ruff format --check src tests
+      - run: mypy src
+      - name: pytest (SQLite)
+        run: pytest -q
+      - name: pytest (PostgreSQL)
+        run: pytest -q
+        env: { TEST_DATABASE_URL: "postgresql+asyncpg://tutor:tutor@localhost:5432/tutor_test" }
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: [web, backend]
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t ai-tutor:ci .

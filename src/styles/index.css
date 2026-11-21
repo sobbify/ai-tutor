@@ -1,0 +1,295 @@
+@import 'tailwindcss';
+
+/*
+ * Design tokens taken from the AI Tutor Figma file (sampled from the 2x exports).
+ * They sit on top of the Buddy's World palette: the header blue and aqua panels are the same,
+ * the Figma file uses a brighter action blue (#003EF2) than Buddy's World deep blue.
+ */
+@theme {
+  --font-sans: 'Nunito', ui-rounded, system-ui, sans-serif;
+
+  --color-header: #1f92fc; /* app bar */
+  --color-action: #003ef2; /* buttons, links, progress, mic */
+  --color-action-strong: #0032c4; /* hover / pressed */
+  --color-sky: #d5edff; /* pills, learner bubbles, icon wells */
+  --color-aqua: #ebffff; /* hero cards, "You Could Say" panel */
+  --color-ink: #2c2b2b; /* primary text */
+  --color-ink-2: #565656; /* secondary text */
+  --color-sage: #4f6b63; /* "Only you see your practice" (darkened from #68837B for AA contrast) */
+  --color-line: #d5d9dc; /* dividers, idle progress */
+  --color-mist: #f7f7f7; /* feedback area, locked rows, practise items */
+  --color-ok: #166534; /* success text, done segments */
+  --color-ok-bg: #dcfce7;
+  --color-ok-dot: #16a34a;
+  --color-ok-node: #23b357;
+  --color-road-done: #5ccb7a;
+  --color-fix-dot: #f59e0b;
+  --color-speaking: #7c45d6; /* "Speaking" / "Continue" pills (darkened from #925AE2 for AA contrast) */
+  --color-stop: #d93636; /* stop-recording button (Figma #E94949) */
+  --color-gold: #fde68a;
+  --color-gold-ink: #7a5300;
+  --color-surface: #ffffff; /* cards, sheets, the phone column */
+  --color-page: #eef3f8; /* behind the phone column on wide screens */
+  --color-on-action: #ffffff; /* text on action-blue fills */
+  --color-danger: #c02626; /* fills with white text */
+  --color-danger-ink: #c02626; /* text and outlines */
+  --color-danger-wash: #fde8e8;
+  --color-bubble-line: #b9d6ee;
+  --color-skin: #f1d6c3;
+  --color-skin-ink: #6b4a35;
+
+  --radius-card: 24px;
+  --radius-video: 26px;
+
+  --shadow-card: 0 6px 24px rgb(31 146 252 / 0.1);
+  --shadow-soft: 0 2px 10px rgb(44 43 43 / 0.08);
+
+  --animate-wave: wave 1s ease-in-out infinite;
+  --animate-halo: halo 2.4s ease-in-out infinite;
+  --animate-rise: rise 0.42s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-pop: pop 0.5s cubic-bezier(0.3, 1.5, 0.5, 1) both;
+  --animate-shimmer: shimmer 1.4s linear infinite;
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes pop {
+    0% {
+      opacity: 0;
+      transform: scale(0.6);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  @keyframes shimmer {
+    from {
+      background-position: -200px 0;
+    }
+    to {
+      background-position: 200px 0;
+    }
+  }
+
+  @keyframes wave {
+    0%,
+    100% {
+      transform: scaleY(0.45);
+    }
+    50% {
+      transform: scaleY(1);
+    }
+  }
+  @keyframes halo {
+    0%,
+    100% {
+      transform: scale(1);
+      opacity: 0.55;
+    }
+    50% {
+      transform: scale(1.08);
+      opacity: 0.85;
+    }
+  }
+}
+
+/*
+ * Dark theme: the same tokens, re-pointed. Chosen in Settings → Appearance (Auto follows the phone).
+ * Action blue turns light in the dark, so text on blue fills (on-action) turns dark — both pass AA.
+ */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --color-header: #173a66;
+  --color-action: #8fb0ff;
+  --color-action-strong: #b3c9ff;
+  --color-on-action: #0b1636;
+  --color-sky: #1d3352;
+  --color-aqua: #11272f;
+  --color-ink: #e8edf2;
+  --color-ink-2: #a9b4bf;
+  --color-sage: #93b8ac;
+  --color-line: #2c3846;
+  --color-mist: #19222d;
+  --color-ok: #74e3a2;
+  --color-ok-bg: #12351f;
+  --color-ok-dot: #3ccf73;
+  --color-gold: #4d3b0e;
+  --color-gold-ink: #fcd970;
+  --color-surface: #121a23;
+  --color-page: #0a0f15;
+  --color-danger-ink: #ff8f8f;
+  --color-danger-wash: #3a1616;
+  --color-bubble-line: #2f4a66;
+  --color-skin: #e6c3aa;
+  --shadow-card: 0 6px 24px rgb(0 0 0 / 0.35);
+  --shadow-soft: 0 2px 10px rgb(0 0 0 / 0.4);
+}
+/* Illustrations keep their colours, a little dimmed so they don't glare at night. */
+:root[data-theme='dark'] .dim-in-dark {
+  filter: brightness(0.78) saturate(0.9);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply bg-page font-sans text-ink antialiased;
+    min-height: 100dvh;
+  }
+  :focus-visible {
+    outline: 3px solid var(--color-action);
+    outline-offset: 2px;
+  }
+  button {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+}
+
+/* Route changes cross-fade with a small lift (React Router view transitions). */
+::view-transition-old(root) {
+  animation: 160ms ease-out both vt-out;
+}
+::view-transition-new(root) {
+  animation: 240ms cubic-bezier(0.2, 0.8, 0.2, 1) both vt-in;
+}
+@keyframes vt-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes vt-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+/* Illustrated avatar (features/conversation/Portrait.tsx). */
+.pt-blink,
+.pt-talk,
+.pt-breathe,
+.pt-sway,
+.pt-flicker {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.pt-blink {
+  animation: pt-blink 4.6s infinite;
+}
+.pt-talk {
+  animation: pt-talk 0.32s ease-in-out infinite alternate;
+}
+.pt-breathe {
+  transform-origin: 50% 100%;
+  animation: pt-breathe 4s ease-in-out infinite;
+}
+.pt-sway {
+  transform-origin: 50% 100%;
+  animation: pt-sway 2.2s ease-in-out infinite;
+}
+.pt-flicker {
+  transform-origin: 50% 100%;
+  animation: pt-flicker 0.9s ease-in-out infinite alternate;
+}
+@keyframes pt-blink {
+  0%,
+  92%,
+  100% {
+    transform: scaleY(1);
+  }
+  95% {
+    transform: scaleY(0.1);
+  }
+}
+@keyframes pt-talk {
+  from {
+    transform: scale(0.85, 0.25);
+  }
+  to {
+    transform: scale(1, 1);
+  }
+}
+@keyframes pt-breathe {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-1.5px) scale(1.006);
+  }
+}
+@keyframes pt-sway {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  30% {
+    transform: rotate(-1.2deg) translateY(-1px);
+  }
+  70% {
+    transform: rotate(1deg);
+  }
+}
+@keyframes pt-flicker {
+  from {
+    transform: scale(0.9, 0.95);
+  }
+  to {
+    transform: scale(1.05, 1.08);
+  }
+}
+
+/* Celebration confetti (components/ui/Confetti.tsx). */
+.confetti-bit {
+  opacity: 0;
+  animation-name: confetti-fall;
+  animation-timing-function: cubic-bezier(0.25, 0.6, 0.4, 1);
+  animation-fill-mode: forwards;
+}
+@keyframes confetti-fall {
+  0% {
+    opacity: 1;
+    transform: translate(0, -12px) rotate(0deg);
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--drift), 230px) rotate(var(--turn));
+  }
+}
+
+/* Loading placeholders. */
+.skeleton {
+  background: linear-gradient(90deg, var(--color-mist) 0, var(--color-line) 40%, var(--color-mist) 80%) 0 0 / 400px 100%;
+  animation: var(--animate-shimmer);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

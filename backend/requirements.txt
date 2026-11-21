@@ -1,0 +1,14 @@
+# Runtime (same as pyproject.toml). `pip install -r requirements.txt` for a plain venv.
+fastapi>=0.115
+uvicorn[standard]>=0.30
+sqlalchemy[asyncio]>=2.0.30
+aiosqlite>=0.20
+alembic>=1.13
+pydantic>=2.7
+pydantic-settings>=2.3
+python-dotenv>=1.0
+python-multipart>=0.0.9
+structlog>=24.1
+google-genai>=2.3  # 3.x needs Python 3.11+; the code pins the API version itself
+tzdata>=2024.1  # school timezone on systems without a zoneinfo database
+# PostgreSQL (optional): asyncpg>=0.29
