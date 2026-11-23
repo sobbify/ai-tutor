@@ -1,5 +1,7 @@
 # ELSA — AI English speaking tutor (MVP)
 
+[![CI](https://github.com/sobbify/ai-tutor/actions/workflows/ci.yml/badge.svg)](https://github.com/sobbify/ai-tutor/actions/workflows/ci.yml)
+
 A private English speaking coach for EuroKids teachers, inside Buddy's World. Teachers rehearse
 real moments with parents — drop-off, pick-up, parent meetings, worried parents — in a 15-day
 programme: a short Learn step, a voice role-play with an AI parent (Gemini Live, realtime), one
