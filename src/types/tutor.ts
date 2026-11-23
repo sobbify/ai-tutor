@@ -81,6 +81,8 @@ export const FeedbackSchema = z.object({
   fix: GrammarFixSchema.nullable(),
   /** One-line grammar micro-lesson that comes with a fix. */
   tip: z.string().nullable().optional(),
+  /** What kind of slip the fix is about: tense, agreement, article, preposition, … */
+  category: z.string().nullable().optional(),
 });
 export type Feedback = z.infer<typeof FeedbackSchema>;
 
@@ -151,6 +153,7 @@ export const PractiseItemSchema = z.object({
   transcript: z.string(),
   fix: GrammarFixSchema,
   tip: z.string().nullable().optional(),
+  category: z.string().nullable().optional(),
 });
 export type PractiseItem = z.infer<typeof PractiseItemSchema>;
 

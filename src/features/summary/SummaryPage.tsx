@@ -15,7 +15,7 @@ import { ChartIcon, CheckIcon, LockOpenIcon } from '@/components/ui/Icons';
 import { Pill } from '@/components/ui/Pill';
 import { SaveLineButton } from '@/components/ui/SaveLineButton';
 import { SpeakerButton } from '@/components/ui/SpeakerButton';
-import { HighlightedText } from '@/features/conversation/ChatBubbles';
+import { CategoryBadge, SaidTry } from '@/features/conversation/ChatBubbles';
 import type { JustFinishedState } from '@/features/conversation/useConversation';
 
 /** Screens 12 (just finished) and 13 (revisit). */
@@ -134,17 +134,13 @@ function PractiseList({ summary }: { summary: Summary }) {
           {summary.practise.map((item) => (
             <li key={item.turnId} className="flex animate-rise items-center gap-3 rounded-[20px] bg-mist py-3 pr-3 pl-3">
               <div className="flex-1">
-                <p className="text-[13.5px] leading-5 text-ink-2">
-                  {t.summary.youSaid} <HighlightedText text={item.transcript} phrase={item.fix.wrong} />
+                <CategoryBadge category={item.category} />
+                <p className="sr-only">
+                  {t.summary.youSaid} {item.transcript}. {t.summary.better} “{item.fix.better}”{item.tip ? ` ${t.conversation.tip}: ${item.tip}` : ''}
                 </p>
-                <p className="mt-1 text-[15px] leading-snug font-bold">
-                  {t.summary.better} “{item.fix.better}”
-                </p>
-                {item.tip && (
-                  <p className="mt-1 text-[13px] leading-5 text-ink-2">
-                    <b className="text-action">{t.conversation.tip}:</b> {item.tip}
-                  </p>
-                )}
+                <div className="mt-1.5" aria-hidden="true">
+                  <SaidTry transcript={item.transcript} fix={item.fix} tip={item.tip} compact />
+                </div>
               </div>
               <span className="flex shrink-0 flex-col gap-1.5">
                 <SpeakerButton text={item.fix.better} speechId={`summary:${item.turnId}`} />

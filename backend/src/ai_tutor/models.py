@@ -173,6 +173,7 @@ class Reply(Base):
     fillers: Mapped[int | None] = mapped_column(Integer, nullable=True)  # ums/uhs, private (FR-13)
     signals: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)  # hidden assessment inputs
     typed: Mapped[bool] = mapped_column(Boolean, default=False)  # typing fallback (FR-16)
+    category: Mapped[str | None] = mapped_column(String(24), nullable=True)  # kind of slip the fix is about
 
     run: Mapped[Run] = relationship(back_populates="replies")
 

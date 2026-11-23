@@ -30,6 +30,39 @@ class LineContext:
     known_fixes: list[dict[str, str]] = field(default_factory=list)
 
 
+# What kind of slip a fix is about (shown as a small badge on the correction card).
+CATEGORIES = (
+    "tense",
+    "agreement",
+    "article",
+    "preposition",
+    "word-order",
+    "plural",
+    "pronoun",
+    "word-choice",
+    "grammar",
+)
+_ALIASES = {
+    "verb-tense": "tense",
+    "subject-verb-agreement": "agreement",
+    "articles": "article",
+    "prepositions": "preposition",
+    "plurals": "plural",
+    "pronouns": "pronoun",
+    "vocabulary": "word-choice",
+    "question": "word-order",
+}
+
+
+def clean_category(value: object) -> str | None:
+    """Map the model's label onto CATEGORIES (anything unknown becomes "grammar")."""
+    text = str(value or "").strip().lower().replace(" ", "-").replace("_", "-")
+    if not text:
+        return None
+    text = _ALIASES.get(text, text)
+    return text if text in CATEGORIES else "grammar"
+
+
 class Evaluation(BaseModel):
     heard: bool
     transcript: str
@@ -37,6 +70,8 @@ class Evaluation(BaseModel):
     fix: GrammarFix | None
     # Grammar micro-lesson shown with the fix (FR-12)
     tip: str | None = None
+    # One of CATEGORIES, when there is a fix
+    category: str | None = None
     # Private signals for the hidden assessment (PRD §09) — never shown as scores
     fillers: int | None = None  # ums, uhs, "like" used as a filler
     answered: bool | None = None  # listening: did the reply answer what the parent said?
@@ -84,10 +119,12 @@ examiner. The teacher is role-playing a short conversation with a parent and has
      If her reply has several sentences, give only the one with the mistake.
    - tip: the rule behind it in one short line (under 16 words), with a tiny example, e.g.
      "Use 'will' for promises about later: 'I will call you.'"
+   - category: one of tense, agreement, article, preposition, word-order, plural, pronoun,
+     word-choice, grammar
    - one positive about how she answered (e.g. "You answered her question clearly").
    If she used Hindi or another language, fix.better is her sentence in simple English and the tip is
    "Here is how to say it in English." Never tell her off.
-5. If there is no grammar mistake, set fix=null, tip=null and give exactly two positives:
+5. If there is no grammar mistake, set fix=null, tip=null, category=null and give exactly two positives:
    one short, specific line about her tone or content (e.g. "You reassured her about lunch") and
    "No grammar mistakes. Well said!".
 6. Private signals (never shown to her as scores):
@@ -171,7 +208,9 @@ class GeminiEvaluator:
                     continue
                 if not result.heard:
                     return Evaluation(heard=False, transcript=result.transcript, positives=[], fix=None)
-                return result if result.fix else result.model_copy(update={"tip": None})
+                if not result.fix:
+                    return result.model_copy(update={"tip": None, "category": None})
+                return result.model_copy(update={"category": clean_category(result.category) or "grammar"})
         raise EvaluationUnavailable("every Gemini key failed")
 
 
@@ -211,13 +250,13 @@ class RuleBasedEvaluator:
             ),
             None,
         )
-        tip = RULE_TIPS["default"]
+        tip, category = RULE_TIPS["default"], "grammar"
         if fix is not None and re.search(r"\bwill\b", fix.better, re.IGNORECASE):
-            tip = RULE_TIPS["will"]
+            tip, category = RULE_TIPS["will"], "tense"
         if fix is None and (m := _AGREEMENT.search(transcript)):
             better = _AGREEMENT.sub(lambda x: f"{x.group(1)} {_THIRD_PERSON[x.group(2).lower()]}", transcript)
             fix = GrammarFix(wrong=m.group(2), better=better)
-            tip = RULE_TIPS["agreement"]
+            tip, category = RULE_TIPS["agreement"], "agreement"
         if fix:
             return Evaluation(
                 heard=True,
@@ -225,6 +264,7 @@ class RuleBasedEvaluator:
                 positives=[f"You answered {ctx.possessive} question clearly"],
                 fix=fix,
                 tip=tip,
+                category=category,
                 **signals,
             )
         return Evaluation(

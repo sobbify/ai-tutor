@@ -423,7 +423,7 @@ export function createMockApi({ storage = safeStorage(), latencyMs = 350, onboar
       const fixesOf = (run: StoredRun) =>
         runTurns(m, run).flatMap((t) => {
           const first = run.firstAttempts[t.id];
-          return first?.feedback.fix ? [{ turnId: t.id, transcript: first.transcript, fix: first.feedback.fix, tip: first.feedback.tip ?? null }] : [];
+          return first?.feedback.fix ? [{ turnId: t.id, transcript: first.transcript, fix: first.feedback.fix, tip: first.feedback.tip ?? null, category: first.feedback.category ?? null }] : [];
         });
       return wait({
         momentId: id,

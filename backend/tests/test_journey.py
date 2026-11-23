@@ -82,6 +82,7 @@ def test_not_heard_is_not_stored(learner: TestClient) -> None:
         "positives": [],
         "fix": None,
         "tip": None,
+        "category": None,
     }
     assert learner.post("/api/tutor/moments/morning-greeting/advance", headers=CSRF).status_code == 409
 
@@ -94,6 +95,10 @@ def test_typing_fallback(learner: TestClient) -> None:
         url, data={"turn_id": "mg-1", "typed": "true", "transcript": "Good morning, she will settle in."}, headers=CSRF
     ).json()
     assert r["typed"] is True and r["feedback"]["heard"] is True
+    slip = learner.post(
+        url, data={"turn_id": "mg-1", "typed": "true", "transcript": "Good morning, she settle quickly."}, headers=CSRF
+    )
+    assert slip.json()["feedback"]["category"] == "tense"
 
 
 def test_completion_unlocks_and_summarises(learner: TestClient) -> None:
@@ -103,6 +108,7 @@ def test_completion_unlocks_and_summarises(learner: TestClient) -> None:
     assert summary["firstCompletion"] is True and summary["unlocked"] is None
     assert summary["nextMomentId"] == "pickup-update"
     assert [p["fix"]["better"] for p in summary["practise"]] == MG_FIXES
+    assert all(p["category"] for p in summary["practise"])  # every fix says what kind of slip it was
     assert all(p["tip"] for p in summary["practise"])
     progress = {m["id"]: m for m in learner.get("/api/tutor/progress").json()["moments"]}
     assert progress["morning-greeting"]["status"] == "done"

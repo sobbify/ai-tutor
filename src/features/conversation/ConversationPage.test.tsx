@@ -1,4 +1,4 @@
-import { act, screen } from '@testing-library/react';
+import { act, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -41,7 +41,7 @@ describe('Conversation', () => {
     renderRoute('/moments/morning-greeting');
 
     expect(await screen.findByText('Response 1 of 6')).toBeInTheDocument();
-    expect(screen.getByText('Ria’s mother at the gate, in Ria’s first week of school.')).toBeInTheDocument();
+    expect(screen.getByRole('list', { name: 'Conversation so far' })).toHaveTextContent('Ria’s mother at the gate, in Ria’s first week of school.');
     expect(screen.getByText(/We will start with her favourite songs/)).toBeInTheDocument();
     expect(screen.getByText('Speaking only. We never judge your accent.')).toBeInTheDocument();
 
@@ -50,8 +50,14 @@ describe('Conversation', () => {
     await user.click(screen.getByRole('button', { name: 'Stop and send your reply' }));
 
     expect(await screen.findByRole('heading', { name: 'Grammar Fix' })).toBeInTheDocument();
-    expect(screen.getAllByText('You answered her question clearly').length).toBeGreaterThan(0);
-    expect(screen.getByText('“She will settle in quickly.”')).toBeInTheDocument();
+    const card = screen.getByRole('region', { name: 'Grammar Fix' });
+    expect(card).toHaveTextContent('You answered her question clearly');
+    expect(card).toHaveTextContent('Tense'); // what kind of slip it was
+    expect(card).toHaveTextContent(/You said\s+Don’t worry, she settle quickly\./);
+    expect(card).toHaveTextContent(/Try\s+She will settle in quickly\./);
+    // The slip is marked in her own words, and the new words in the fix stand out.
+    expect(within(card).getByText('will', { selector: 'ins' })).toBeInTheDocument();
+    expect(screen.getByRole('list', { name: 'Conversation so far' }).querySelector('mark')).toHaveTextContent('(mistake: settle)');
 
     await user.click(screen.getByRole('button', { name: 'Continue' }));
     expect(await screen.findByText('Response 2 of 6')).toBeInTheDocument();
@@ -84,18 +90,32 @@ describe('Conversation', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('The microphone is blocked');
   });
 
-  it('shows the chat history when asked', async () => {
+  it('keeps a live transcript of both sides, with each correction docked under her line', async () => {
     const user = userEvent.setup();
     renderRoute('/moments/morning-greeting');
     await speak(user, null);
     await user.click(await screen.findByRole('button', { name: 'Continue' }));
     await screen.findByText('Response 2 of 6');
-    await user.click(screen.getByRole('button', { name: 'Show Chat' }));
     const chat = screen.getByRole('list', { name: 'Conversation so far' });
     expect(chat).toHaveTextContent('Good morning, Priya ma’am! Ria is a little nervous today.');
-    expect(chat).toHaveTextContent('Try: “She will settle in quickly.”');
+    expect(chat).toHaveTextContent(/Good morning\. Don’t worry, she \(mistake: settle\) quickly\./);
+    expect(chat).toHaveTextContent(/Try\s+She will settle in quickly\./);
     expect(chat).toHaveTextContent('please give her this cough syrup at eleven');
-    expect(screen.getByRole('button', { name: 'Hide Chat' })).toHaveAttribute('aria-pressed', 'true');
+
+    // Captions can be hidden, like on a call.
+    await user.click(screen.getByRole('button', { name: 'Captions' }));
+    expect(screen.queryByRole('list', { name: 'Conversation so far' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Captions' })).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('a correction can be closed, and it docks into the chat', async () => {
+    const user = userEvent.setup();
+    renderRoute('/moments/morning-greeting');
+    await speak(user, null);
+    await user.click(await screen.findByRole('button', { name: 'Close' }));
+    expect(screen.queryByRole('region', { name: 'Grammar Fix' })).not.toBeInTheDocument();
+    expect(screen.getByRole('list', { name: 'Conversation so far' })).toHaveTextContent(/Try\s+She will settle in quickly\./);
+    expect(screen.getByRole('button', { name: 'Say It Again' })).toBeInTheDocument();
   });
 
   it('after the last line goes to the full chat, then a "Well done" summary', async () => {

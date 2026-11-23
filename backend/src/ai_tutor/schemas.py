@@ -88,6 +88,7 @@ class Feedback(Camel):
     positives: list[str]
     fix: GrammarFix | None
     tip: str | None = None  # one-line grammar micro-lesson with the fix
+    category: str | None = None  # tense, agreement, article… (badge on the correction card)
 
 
 class ReplyOut(Camel):
@@ -150,6 +151,7 @@ class PractiseItem(Camel):
     transcript: str
     fix: GrammarFix
     tip: str | None = None
+    category: str | None = None
 
 
 class MomentRef(Camel):

@@ -2,7 +2,7 @@ import { Component, lazy, memo, Suspense, useMemo, useState, type ReactNode } fr
 import { t } from '@/i18n';
 import { cn } from '@/lib/cn';
 import type { Character, Mood } from '@/types/tutor';
-import { SpeakingBarsIcon } from '@/components/ui/Icons';
+import { SpeakerIcon, SpeakingBarsIcon } from '@/components/ui/Icons';
 import { wants3dAvatar } from '@/lib/avatar3d';
 import { Portrait } from './Portrait';
 import { lookFor, type SceneKind } from './portraitLook';
@@ -36,6 +36,10 @@ interface AvatarStageProps {
   videoUrl: string | null;
   /** Her reply is being checked: the parent waits, looking thoughtful. */
   thinking?: boolean;
+  /** Her own camera, picture-in-picture (top right). */
+  pip?: ReactNode;
+  /** Shows a "Hear again" button on the tile while the parent isn't speaking. */
+  onHearAgain?: () => void;
 }
 
 /**
@@ -44,7 +48,18 @@ interface AvatarStageProps {
  * meanwhile (while the 3D head loads) and wherever it can't. A `videoUrl` (and poster) shows real
  * video instead, with no layout change.
  */
-export const AvatarStage = memo(function AvatarStage({ character, line, speaking, compact, videoUrl, scene, mood, thinking = false }: AvatarStageProps) {
+export const AvatarStage = memo(function AvatarStage({
+  character,
+  line,
+  speaking,
+  compact,
+  videoUrl,
+  scene,
+  mood,
+  thinking = false,
+  pip,
+  onHearAgain,
+}: AvatarStageProps) {
   const look = lookFor(character);
   // Parents get the talking 3D head; ELSA, the coach, keeps her own illustrated look.
   const [three, setThree] = useState<'off' | 'loading' | 'on'>(() => (look.kind !== 'coach' && wants3dAvatar() ? 'loading' : 'off'));
@@ -54,7 +69,7 @@ export const AvatarStage = memo(function AvatarStage({ character, line, speaking
     <figure
       className={cn(
         'relative mx-4 overflow-hidden rounded-video bg-[#26313d] shadow-soft transition-[height,margin] duration-300 ease-out',
-        compact === 'feedback' ? 'mt-3 h-[150px]' : compact === 'chat' ? 'mt-3 h-[190px]' : 'mt-4 h-[250px]',
+        compact === 'feedback' ? 'mt-3 h-[150px]' : compact === 'chat' ? 'mt-3 h-[190px]' : 'mt-3 h-[220px]',
       )}
     >
       {videoUrl ? (
@@ -94,6 +109,17 @@ export const AvatarStage = memo(function AvatarStage({ character, line, speaking
           {t.conversation.speaking}
         </span>
       )}
+      {!speaking && onHearAgain && (
+        <button
+          type="button"
+          onClick={onHearAgain}
+          className="absolute right-3 bottom-3 inline-flex h-9 items-center gap-1.5 rounded-full bg-black/45 pr-3.5 pl-3 text-[14px] font-bold text-white backdrop-blur-sm hover:bg-black/60 focus-visible:outline-white"
+        >
+          <SpeakerIcon size={16} />
+          {t.conversation.hearAgain}
+        </button>
+      )}
+      {pip}
     </figure>
   );
 });

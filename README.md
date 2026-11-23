@@ -1,7 +1,5 @@
 # ELSA — AI English speaking tutor (MVP)
 
-[![CI](https://github.com/sobbify/ai-tutor/actions/workflows/ci.yml/badge.svg)](https://github.com/sobbify/ai-tutor/actions/workflows/ci.yml)
-
 A private English speaking coach for EuroKids teachers, inside Buddy's World. Teachers rehearse
 real moments with parents — drop-off, pick-up, parent meetings, worried parents — in a 15-day
 programme: a short Learn step, a voice role-play with an AI parent (Gemini Live, realtime), one
@@ -107,6 +105,14 @@ npm run lint && npm test && npm run build
 npm run test:e2e     # Playwright + axe accessibility checks (mock build)
 ```
 
+- **The role-play is a video call** (the layout of the Gemini Live tutor's call screen): call
+  timer; the parent on screen with her own camera picture-in-picture (off by default, never sent or
+  recorded); a **live transcript** of both sides — her words appear as she speaks; a **correction
+  card** that floats up with the slip marked in her words (red, wavy), a badge for the kind of slip
+  (Tense, A / an / the, Preposition…), "You said → Try" word by word (changed words struck through,
+  new words in green) and the rule, then docks into the chat after a few seconds; call controls
+  (camera, captions, mic with a live level ring / Continue, type, leave). Every fix stores its
+  category (migration 0004).
 - **Talking 3D parents** ([`@interviewflowai/talking-avatar`](https://talking-avatar.dev), MIT;
   Microsoft Rocketbox avatars, MIT): the parent is a 3D head whose lips follow the line's Gemini
   voice, drawn over the moment's illustrated scene (school gate, classroom, office, phone call,

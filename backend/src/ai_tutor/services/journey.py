@@ -54,7 +54,9 @@ def reply_out(r: Reply) -> ReplyOut:
         turn_id=r.turn_id,
         transcript=r.transcript,
         attempt=r.attempt,
-        feedback=Feedback(heard=True, positives=r.positives, fix=fix, tip=r.tip if fix else None),
+        feedback=Feedback(
+            heard=True, positives=r.positives, fix=fix, tip=r.tip if fix else None, category=r.category if fix else None
+        ),
         typed=r.typed,
     )
 
@@ -267,6 +269,7 @@ class Journey:
                             transcript=f.transcript,
                             fix=GrammarFix(wrong=f.fix_wrong or "", better=f.fix_better),
                             tip=f.tip,
+                            category=f.category,
                         )
                     )
             return items
@@ -378,12 +381,15 @@ class Journey:
             raise HTTPException(status.HTTP_502_BAD_GATEWAY, "Couldn’t check that reply. Please try again.") from None
         attempt = len(RunView(run).attempts(turn.id)) + 1
         tip = result.tip if result.fix else None
+        category = (result.category or "grammar") if result.fix else None
         out = ReplyOut(
             id=None,
             turn_id=turn.id,
             transcript=result.transcript,
             attempt=attempt,
-            feedback=Feedback(heard=result.heard, positives=result.positives, fix=result.fix, tip=tip),
+            feedback=Feedback(
+                heard=result.heard, positives=result.positives, fix=result.fix, tip=tip, category=category
+            ),
             typed=typed,
         )
         if not result.heard:
@@ -398,6 +404,7 @@ class Journey:
             fix_wrong=result.fix.wrong if result.fix else None,
             fix_better=result.fix.better if result.fix else None,
             tip=tip,
+            category=category,
             fillers=None if typed else result.fillers,
             signals=result.signals(),
             typed=typed,

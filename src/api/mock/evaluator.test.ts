@@ -13,12 +13,14 @@ describe('evaluateReply (mock grammar check)', () => {
       positives: ['You answered her question clearly'],
       fix: { wrong: 'settle', better: 'She will settle in quickly.' },
       tip: 'Use “will” for promises about later: “I will call you.”',
+      category: 'tense',
     });
   });
 
   it('catches subject–verb agreement generically', () => {
     const fb = evaluateReply(turn, 'Yes. He like the songs very much.', 'his');
     expect(fb.fix).toEqual({ wrong: 'like', better: 'He likes the songs very much.' });
+    expect(fb.category).toBe('agreement');
   });
 
   it("catches \"she don't\"", () => {
@@ -33,6 +35,6 @@ describe('evaluateReply (mock grammar check)', () => {
   });
 
   it('treats near-silence as not heard', () => {
-    expect(evaluateReply(turn, ' um ', 'her')).toEqual({ heard: false, positives: [], fix: null, tip: null });
+    expect(evaluateReply(turn, ' um ', 'her')).toEqual({ heard: false, positives: [], fix: null, tip: null, category: null });
   });
 });

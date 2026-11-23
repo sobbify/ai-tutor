@@ -139,3 +139,37 @@ export const PlayIcon = (p: IconProps) => (
     <path d="M7 4v16l13-8z" />
   </Icon>
 );
+
+export const CameraIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M15 10l4.6-2.8a.6.6 0 0 1 .9.5v8.6a.6.6 0 0 1-.9.5L15 14" />
+    <rect x="3" y="6.5" width="12" height="11" rx="2.5" />
+  </Icon>
+);
+
+export const CameraOffIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M15 10l4.6-2.8a.6.6 0 0 1 .9.5v8.6a.6.6 0 0 1-.9.5L15 14" />
+    <path d="M10.5 6.5H12.5A2.5 2.5 0 0 1 15 9v4.5M15 17a2.5 2.5 0 0 1-2.5.5h-7A2.5 2.5 0 0 1 3 15V9a2.5 2.5 0 0 1 2-2.45" />
+    <path d="m3 3 18 18" />
+  </Icon>
+);
+
+export const CaptionsIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="3" y="5" width="18" height="14" rx="3" />
+    <path d="M10 10.2a2.2 2.2 0 1 0 0 3.6M16.5 10.2a2.2 2.2 0 1 0 0 3.6" />
+  </Icon>
+);
+
+export const PhoneDownIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M3.6 13.8c4.8-4 12-4 16.8 0 .5.4.6 1.1.3 1.6l-1.2 1.9a1.2 1.2 0 0 1-1.5.5l-2.5-1a1.2 1.2 0 0 1-.7-1.1v-1.5a10.4 10.4 0 0 0-5.6 0v1.5c0 .5-.3.9-.7 1.1l-2.5 1a1.2 1.2 0 0 1-1.5-.5L3.3 15.4a1.2 1.2 0 0 1 .3-1.6Z" />
+  </Icon>
+);
+
+export const ArrowRightIcon = (p: IconProps) => (
+  <Icon strokeWidth={2.4} {...p}>
+    <path d="M5 12h14M13 6l6 6-6 6" />
+  </Icon>
+);

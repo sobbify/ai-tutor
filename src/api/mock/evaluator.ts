@@ -66,17 +66,21 @@ function genericFix(transcript: string): GrammarFix | null {
 export function evaluateReply(turn: MockTurn, transcript: string, possessive: 'her' | 'his'): Feedback {
   const clean = transcript.trim();
   if (clean.split(/\s+/).filter(Boolean).length < MIN_WORDS) {
-    return { heard: false, positives: [], fix: null, tip: null };
+    return { heard: false, positives: [], fix: null, tip: null, category: null };
   }
 
   const known = turn.knownFixes?.find((k) => k.pattern.test(clean));
   const fix: GrammarFix | null = known ? { wrong: known.wrong, better: known.better } : genericFix(clean);
 
   if (fix) {
-    const tip = /\bwill\b/i.test(fix.better)
-      ? 'Use “will” for promises about later: “I will call you.”'
-      : 'Keep your sentence, change only the word that is wrong.';
-    return { heard: true, positives: [`You answered ${possessive} question clearly`], fix, tip };
+    const future = /\bwill\b/i.test(fix.better) && !/\bwill\b/i.test(clean);
+    const agreement = !known && (DONT.test(clean) || AGREEMENT.test(clean));
+    const [tip, category] = future
+      ? ['Use “will” for promises about later: “I will call you.”', 'tense']
+      : agreement
+        ? ['With he, she or it, add -s: “She likes”, “He has”.', 'agreement']
+        : ['Keep your sentence, change only the word that is wrong.', 'grammar'];
+    return { heard: true, positives: [`You answered ${possessive} question clearly`], fix, tip, category };
   }
-  return { heard: true, positives: ['You sounded warm and kind', 'No grammar mistakes. Well said!'], fix: null, tip: null };
+  return { heard: true, positives: ['You sounded warm and kind', 'No grammar mistakes. Well said!'], fix: null, tip: null, category: null };
 }

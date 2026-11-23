@@ -119,6 +119,7 @@ def test_tool_arguments_are_validated() -> None:
             "positives": ["Kind", ""],
             "fix_wrong": "settle",
             "fix_better": "She will settle.",
+            "category": "Verb tense",
         }
     )
     assert ok == Evaluation(
@@ -126,7 +127,12 @@ def test_tool_arguments_are_validated() -> None:
         transcript="She settle.",
         positives=["Kind"],
         fix=GrammarFix(wrong="settle", better="She will settle."),
+        category="tense",
     )
+    odd = evaluation_from_args(
+        {"heard": True, "transcript": "x y", "positives": ["Kind"], "fix_better": "X y.", "category": "spelling!"}
+    )
+    assert odd is not None and odd.category == "grammar"  # unknown labels never reach the UI
     assert evaluation_from_args({"heard": False, "transcript": "", "positives": ["x"]}) == Evaluation(
         heard=False, transcript="", positives=[], fix=None
     )
@@ -251,7 +257,13 @@ def test_socket_uses_gemini_live_result(settings: Settings) -> None:
             ws.send_text(json.dumps({"type": "stop"}))
             while (m := ws.receive_json())["type"] != "reply":
                 pass
-        assert m["reply"]["feedback"] == {"heard": True, "positives": result.positives, "fix": None, "tip": None}
+        assert m["reply"]["feedback"] == {
+            "heard": True,
+            "positives": result.positives,
+            "fix": None,
+            "tip": None,
+            "category": None,
+        }
         assert (
             listener.specs[0].tool_name == "give_feedback"
             and "Good morning, Priya ma’am" in listener.specs[0].prompt

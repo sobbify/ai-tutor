@@ -273,6 +273,21 @@
   }
 }
 
+/* Live correction card: a countdown, then it docks into the chat. */
+.fix-countdown {
+  animation-name: fix-countdown;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+@keyframes fix-countdown {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
 /* Loading placeholders. */
 .skeleton {
   background: linear-gradient(90deg, var(--color-mist) 0, var(--color-line) 40%, var(--color-mist) 80%) 0 0 / 400px 100%;

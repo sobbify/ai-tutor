@@ -2,6 +2,18 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 
 async function expectAccessible(page: Page) {
+  // Let entrance animations finish first: half-faded text would read as low contrast.
+  await page
+    .waitForFunction(
+      `document.getAnimations().every((a) => {
+        const t = a.effect && a.effect.getComputedTiming();
+        const short = t && t.iterations !== Infinity && Number(t.endTime || 0) <= 2000;
+        return !short || a.playState === 'finished';
+      })`,
+      undefined,
+      { timeout: 3000 },
+    )
+    .catch(() => undefined);
   const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
   expect(results.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`)).toEqual([]);
 }

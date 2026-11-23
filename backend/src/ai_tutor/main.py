@@ -174,7 +174,7 @@ def create_app(
         else:
             h.setdefault("X-Frame-Options", "DENY")
             h.setdefault("Content-Security-Policy", "frame-ancestors 'none'")
-        h.setdefault("Permissions-Policy", "microphone=(self), camera=(), geolocation=()")
+        h.setdefault("Permissions-Policy", "microphone=(self), camera=(self), geolocation=()")
         h.setdefault("Cross-Origin-Opener-Policy", "same-origin")
         if path.startswith("/api/"):
             h.setdefault("Cache-Control", "no-store")

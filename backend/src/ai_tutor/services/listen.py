@@ -21,7 +21,7 @@ from typing import Any, Protocol
 from ..logs import log
 from ..schemas import GrammarFix
 from .audio import LISTEN_RATE
-from .evaluator import SYSTEM_PROMPT, Evaluation, LineContext, line_prompt
+from .evaluator import SYSTEM_PROMPT, Evaluation, LineContext, clean_category, line_prompt
 from .keys import KeyPool
 from .story import STORY_PROMPT, StoryResult, clean
 
@@ -103,6 +103,7 @@ def evaluation_from_args(args: dict[str, Any]) -> Evaluation | None:
         positives=positives,
         fix=GrammarFix(wrong=wrong, better=better) if better else None,
         tip=(_text(args, "tip", 200) or None) if better else None,
+        category=(clean_category(args.get("category")) or "grammar") if better else None,
         fillers=_count(args, "fillers"),
         answered=_flag(args, "answered"),
         polite=_flag(args, "polite"),
@@ -159,6 +160,7 @@ _COMMON = {
     "fix_wrong": ("STRING", "The wrong word or phrase, or empty"),
     "fix_better": ("STRING", "The whole sentence with the mistake, minimally corrected (never a fragment), or empty"),
     "tip": ("STRING", "The grammar rule in under 16 words with a tiny example, or empty"),
+    "category": ("STRING", "tense, agreement, article, preposition, word-order, plural, pronoun, word-choice, grammar"),
     "fillers": ("INTEGER", "How many filler sounds/words (um, uh, er, hmm)"),
 }
 
