@@ -247,6 +247,8 @@ export const en = {
     appearance: 'Appearance',
     appearanceHelp: 'Dark is easier on the eyes at night. Saved on this phone.',
     themes: { auto: 'Auto', light: 'Light', dark: 'Dark' },
+    avatar3d: 'Talking 3D parents',
+    avatar3dHelp: 'Parents appear as 3D faces that move their lips as they speak. Uses about 3 MB once. Turn off on older phones.',
     deleteTitle: 'Delete my practice data',
     deleteHelp: 'Deletes your practice history, stories and phrasebook. This can’t be undone.',
     deleteButton: 'Delete My Data',

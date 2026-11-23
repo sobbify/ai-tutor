@@ -105,12 +105,20 @@ npm run lint && npm test && npm run build
 npm run test:e2e     # Playwright + axe accessibility checks (mock build)
 ```
 
-- The parent appears as an **illustrated, animated portrait** (`features/conversation/Portrait.tsx`):
-  an original flat-style character in a scene that fits the moment (school gate, classroom, office,
-  phone call, Diwali celebration; ELSA wears a headset). Each character keeps a stable look, blinks
-  and breathes while idle, talks while the line plays, and their face follows the line's mood
-  (calm / worried / upset, from the line's level). When a line gets a `videoUrl` (set in Content)
-  the real avatar video takes its place with the line text as captions.
+- **Talking 3D parents** ([`@interviewflowai/talking-avatar`](https://talking-avatar.dev), MIT;
+  Microsoft Rocketbox avatars, MIT): the parent is a 3D head whose lips follow the line's Gemini
+  voice, drawn over the moment's illustrated scene (school gate, classroom, office, phone call,
+  Diwali). Mothers use the built-in female head, fathers the male one.
+  - Lip sync runs **in the browser** from the audio; nothing is sent anywhere. The lip-sync model
+    and both heads are bundled and served by this app (no CDN).
+  - The code (three.js included) loads lazily on the Learn step and role-play only.
+  - It needs WebGL 2 and Gemini's voice. Otherwise (and while it loads, and if it fails, and for
+    ELSA) the **illustrated, animated portrait** shows instead (`features/conversation/Portrait.tsx`).
+    That portrait blinks, talks and follows the line's mood (calm / worried / upset).
+  - Settings → Appearance → "Talking 3D parents" turns it off on older phones.
+  - A line with a `videoUrl` (set in Content) shows that video instead, with the line as captions.
+  - CSP: `script-src` allows `blob:` (its audio worklet) and `'wasm-unsafe-eval'` (its mesh
+    decoder; WebAssembly only, never JavaScript eval); `connect-src` allows `blob:` (its textures).
 - **Appearance:** Light, Dark or Auto (follows the phone) in Settings, saved on the device. Every
   colour is a token in `styles/index.css`, so both themes pass WCAG AA (checked by axe in e2e).
   The admin console always stays light.

@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router';
 import { t } from '@/i18n';
 import { useMoment } from '@/hooks/queries';
@@ -11,6 +12,8 @@ import { HeroCard } from '@/components/ui/Card';
 import { Pill } from '@/components/ui/Pill';
 import { SaveLineButton } from '@/components/ui/SaveLineButton';
 import { SpeakerButton } from '@/components/ui/SpeakerButton';
+import { lookFor } from '@/features/conversation/portraitLook';
+import { preloadAvatar } from '@/features/conversation/preloadAvatar';
 import type { StartState } from '@/features/conversation/useConversation';
 
 /** The "Hear → Learn" steps before the role-play (FR-8, FR-12): key phrases to hear and save, one tip. */
@@ -20,6 +23,12 @@ export default function LearnPage() {
   const quick = useLocationState<StartState>()?.quick === true;
   const navigate = useNavigate();
   const back = useBack('/');
+  const character = moment.data?.character;
+  // While she reads the phrases, fetch the 3D parent so the role-play opens with it ready.
+  useEffect(() => {
+    const kind = character ? lookFor(character).kind : 'coach';
+    if (kind !== 'coach') preloadAvatar(kind === 'man');
+  }, [character]);
   const start = () => void navigate(`/moments/${momentId}`, { replace: true, state: quick ? ({ quick: true } satisfies StartState) : undefined });
 
   if (moment.data && !moment.data.lesson) return <Navigate to={`/moments/${momentId}`} replace state={quick ? { quick: true } : undefined} />;

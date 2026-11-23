@@ -71,6 +71,7 @@ export default function ConversationPage() {
             videoUrl={turn.videoUrl}
             scene={sceneFor(moment)}
             mood={turn.mood}
+            thinking={phase === 'checking'}
           />
         </div>
 

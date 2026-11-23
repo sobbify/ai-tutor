@@ -61,6 +61,11 @@ export async function loadVoice(text: string, url?: string): Promise<AudioBuffer
   return buffer;
 }
 
+/** The line's encoded audio (a fresh copy), for players that decode it themselves (the 3D avatar). */
+export async function loadVoiceBytes(text: string): Promise<ArrayBuffer> {
+  return (await load(text)).slice(0);
+}
+
 /** Play a decoded line; returns a function that stops it. `onEnded` fires once either way. */
 export function playBuffer(buffer: AudioBuffer, onEnded: () => void): () => void {
   const context = getAudioContext();

@@ -9,10 +9,13 @@ import { defineConfig, loadEnv, type Plugin } from 'vite';
  * client injects inline scripts/styles.
  */
 function contentSecurityPolicy(apiOrigin: string): Plugin {
-  const connect = ["'self'", apiOrigin, apiOrigin.replace(/^http/, 'ws')].filter(Boolean).join(' ');
+  // blob: the 3D avatar's textures are unpacked from its model file and loaded from blob: URLs.
+  const connect = ["'self'", 'blob:', apiOrigin, apiOrigin.replace(/^http/, 'ws')].filter(Boolean).join(' ');
   const csp = [
     "default-src 'self'",
-    "script-src 'self'",
+    // blob: the 3D avatar's audio worklet; wasm-unsafe-eval: its mesh decoder (WebAssembly only,
+    // never JavaScript eval).
+    "script-src 'self' blob: 'wasm-unsafe-eval'",
     "style-src 'self'",
     "img-src 'self' data: blob:",
     "font-src 'self'",

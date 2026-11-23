@@ -15,16 +15,20 @@ interface PortraitProps {
   speaking: boolean;
   /** Short tile (feedback / chat open): frame the face, not the shoulders. */
   tight?: boolean;
+  /** False: the scene only (the 3D parent is drawn on top of it). */
+  person?: boolean;
 }
 
-export const Portrait = memo(function Portrait({ character, scene, mood, speaking, tight = false }: PortraitProps) {
+export const Portrait = memo(function Portrait({ character, scene, mood, speaking, tight = false, person = true }: PortraitProps) {
   const look = lookFor(character);
   return (
     <svg viewBox={tight ? '0 24 360 170' : '0 0 360 250'} preserveAspectRatio="xMidYMid slice" className="dim-in-dark size-full" aria-hidden="true" focusable="false">
       <Scene kind={scene} />
-      <g className={speaking ? 'pt-sway' : 'pt-breathe'}>
-        <Person look={look} mood={mood} speaking={speaking} />
-      </g>
+      {person && (
+        <g className={speaking ? 'pt-sway' : 'pt-breathe'}>
+          <Person look={look} mood={mood} speaking={speaking} />
+        </g>
+      )}
     </svg>
   );
 });

@@ -10,6 +10,7 @@ import { ConfirmDialog, Section, Toggle } from '@/components/ui/Controls';
 import { LockIcon } from '@/components/ui/Icons';
 import { cn } from '@/lib/cn';
 import { onThemeChange, setThemePref, themePref, type ThemePref } from '@/lib/theme';
+import { avatar3dPref, canDraw3d, setAvatar3dPref } from '@/lib/avatar3d';
 
 /** Her preferences (FR-2, FR-16, FR-31), the privacy promises, and delete my data (FR-39). */
 export default function SettingsPage() {
@@ -129,6 +130,7 @@ export default function SettingsPage() {
 
             <Section title={t.settings.appearance}>
               <Appearance />
+              {canDraw3d() && <Avatar3dToggle />}
             </Section>
 
             <Section title={t.settings.deleteTitle}>
@@ -208,5 +210,22 @@ function Appearance() {
         ))}
       </div>
     </>
+  );
+}
+
+function Avatar3dToggle() {
+  const [on, setOn] = useState(avatar3dPref);
+  return (
+    <div className="mt-2 border-t border-line">
+      <Toggle
+        label={t.settings.avatar3d}
+        help={t.settings.avatar3dHelp}
+        checked={on}
+        onChange={(next) => {
+          setAvatar3dPref(next);
+          setOn(next);
+        }}
+      />
+    </div>
   );
 }
