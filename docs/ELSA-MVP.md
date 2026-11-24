@@ -7,15 +7,22 @@ Decisions taken with the product owner for this stage:
 
 - **English only for now.** No support-language picker or side-by-side translation yet (FR-3,
   FR-9). "Say it my way" is covered by the coach keeping her own words and changing the minimum.
-- **No groups-of-5 totals dashboard** (FR-37) and no cohorts (phase 2). The admin console is the
-  Lighthouse ops tool; centre heads have no access at all.
+- **No groups-of-5 totals dashboard** (FR-37). The admin console is the Lighthouse ops tool;
+  centre heads have no access at all.
+- **Groups started early (phase 2, 2026-11-24), named, not anonymous.** Up to 5 teachers from one
+  centre see each other's names and **snowflakes** — ELSA's XP, earned per session like Duolingo's,
+  for effort only (finishing, "Say it again", stories, practising on a school day), never for
+  accuracy. Groups share a weekly snowflake goal. Feedback, transcripts and levels stay private
+  (FR-28). Anonymous cross-centre games (FR-29) and AI-led group role-plays (FR-27) are not built.
+  Note: the member list is ordered by snowflakes this week, which is close to the leaderboard the
+  PRD rules out for *levels* (§09); snowflakes measure practice, not ability.
 - Scripts are **drafts for academic-team review** — editable in the admin console (`/admin/content`).
 
 ## Requirement checklist
 
 | FR | Requirement | P | Status | Where |
 | --- | --- | --- | --- | --- |
-| 1 | Opens in Buddy's World with existing sign-in | P0 | ✅ | Host app opens `/in?uid=&name=` → HttpOnly cookie |
+| 1 | Opens in Buddy's World with existing sign-in | P0 | ✅ | Host app opens `/in?uid=&name=[&centre=]` → HttpOnly cookie |
 | 2 | Plain consent; keeping recordings optional | P0 | ✅ | `/welcome` step 1. Stricter than the PRD: audio is never recorded — it goes live to Gemini and only the transcript is kept |
 | 3 | Pick support language; English interface | P0 | ⏸ English only (decision) | — |
 | 4 | Friendly baseline chat, never shown as a score | P0 | ✅ | "Say Hello to ELSA" (3 lines, no feedback shown) → hidden profile |
@@ -39,7 +46,12 @@ Decisions taken with the product owner for this stage:
 | 22 | Offline phrasebook | P1 | ✅ | `/phrasebook`; service worker keeps lines and their audio |
 | 23 | Certificate she chooses to share | P1 | ✅ | `/certificate` after 15 practice days + every programme moment; PNG / share |
 | 24 | Private school-day streak | P1 | ✅ | Mon–Fri, holidays skipped, one free miss a week |
-| 25–30 | Cohorts | P2 | — | |
+| 25 | Groups of 4–5, same centre, similar level | P2 | ◑ | `/group`: up to 5, same centre (from `/in?centre=`); formed by invite code, not matched by level |
+| 26 | Optional, leave any time | P2 | ✅ | `/group` → Leave Group; an empty group is deleted |
+| 27 | 15-min AI-led group role-play | P2 | — | Not built: each teacher practises alone; snowflakes count towards the group's weekly goal |
+| 28 | Feedback stays private | P2 | ✅ | Members see name, weekly snowflakes, "practised today" — nothing else |
+| 29 | Anonymous cross-centre games | P2 | ⏸ not now (decision: named, not anonymous) | |
+| 30 | Invites only within her centre | P2 | ✅ | Code from another centre → "That group is for another centre." Invite card on Home at programme end or day 30 |
 | 31 | One nudge a day at her time | P1 | ✅ | Settings → reminder time; host feed `GET /api/host/nudges` |
 | 32 | None on weekends, holidays, after 8 pm | P1 | ✅ | Feed rules; holidays set in the admin console |
 | 33 | Never shames missed days | P1 | ✅ | Fixed kind messages, never mention misses |

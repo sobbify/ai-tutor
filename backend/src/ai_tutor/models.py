@@ -6,7 +6,8 @@ learners ─┬─ learner_sessions   signed-in browsers (HttpOnly cookie → to
           ├─ moment_levels      hidden difficulty per moment (1–4)
           ├─ learner_profiles   hidden assessment — never shown to anyone
           ├─ phrasebook         lines she saved
-          └─ stories            "Tell me what happened" (children's names removed)
+          ├─ stories            "Tell me what happened" (children's names removed)
+          └─ group_members ── groups   practice groups of up to 5 from her centre (named, not anonymous)
 moments ── turns                scripts, editable in the admin console
 app_settings                    key/value (content version, nudge encouragement, holidays)
 admin_users ─┬─ admin_sessions  database console sign-ins
@@ -45,6 +46,8 @@ class Learner(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     uid: Mapped[str] = mapped_column(String(128), unique=True, index=True)
     name: Mapped[str] = mapped_column(String(80))
+    # Her EuroKids centre, sent by the host app (/in?centre=..). Groups only mix teachers of one centre.
+    centre: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(TS, default=utcnow)
     last_seen_at: Mapped[datetime] = mapped_column(TS, default=utcnow)
     # Onboarding and her own preferences (FR-2, FR-5, FR-16, FR-31)
@@ -288,3 +291,34 @@ class AuditLog(Base):
     target_id: Mapped[str] = mapped_column(String(128))
     detail: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(TS, default=utcnow, index=True)
+
+
+class Group(Base):
+    """A practice group: up to 5 teachers from one centre (PRD FR-25/26/30). Members see each other's
+    names and snowflakes (effort), never feedback, transcripts or levels (FR-28)."""
+
+    __tablename__ = "groups"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    code: Mapped[str] = mapped_column(String(12), unique=True)  # invite code, shared within the centre
+    name: Mapped[str] = mapped_column(String(40))
+    centre: Mapped[str] = mapped_column(String(64), index=True)
+    created_by: Mapped[int | None] = mapped_column(ForeignKey("learners.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(TS, default=utcnow)
+
+    members: Mapped[list[GroupMember]] = relationship(
+        back_populates="group", order_by="GroupMember.joined_at", cascade="all, delete-orphan", passive_deletes=True
+    )
+
+
+class GroupMember(Base):
+    """One group per teacher; she can leave any time (FR-26)."""
+
+    __tablename__ = "group_members"
+
+    learner_id: Mapped[int] = mapped_column(ForeignKey("learners.id", ondelete="CASCADE"), primary_key=True)
+    group_id: Mapped[int] = mapped_column(ForeignKey("groups.id", ondelete="CASCADE"), index=True)
+    joined_at: Mapped[datetime] = mapped_column(TS, default=utcnow)
+
+    group: Mapped[Group] = relationship(back_populates="members")
+    learner: Mapped[Learner] = relationship()

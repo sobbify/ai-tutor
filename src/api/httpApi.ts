@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import {
   CertificateSchema,
+  GroupStatusSchema,
   HomeSchema,
   MomentSchema,
   PhraseSchema,
@@ -171,6 +172,12 @@ export function createHttpApi(baseUrl = ''): TutorApi {
     tellStory: (text) => request(`${root}/stories`, StorySchema, { method: 'POST', body: json({ text }), timeoutMs: REPLY_TIMEOUT_MS }),
     deleteStory: (id) => noContent(`${root}/stories/${id}`),
     getCertificate: () => request(`${root}/certificate`, CertificateSchema),
+    getGroup: () => request(`${root}/group`, GroupStatusSchema),
+    createGroup: (name) => request(`${root}/group`, GroupStatusSchema, { method: 'POST', body: json({ name }) }),
+    joinGroup: (code) => request(`${root}/group/join`, GroupStatusSchema, { method: 'POST', body: json({ code }) }),
+    leaveGroup: async () => {
+      await request(`${root}/group/leave`, Empty, { method: 'POST', allowEmpty: true });
+    },
   };
 }
 

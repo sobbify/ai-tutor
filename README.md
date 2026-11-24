@@ -58,8 +58,11 @@ To clean up, run `python purge.py`. It removes what was installed or generated h
 The host app opens:
 
 ```
-https://<server>/in?uid=<learner id>&name=<display name>
+https://<server>/in?uid=<learner id>&name=<display name>&centre=<centre id>
 ```
+
+`centre` is optional. Practice groups only mix teachers of the same centre, so a teacher whose
+link has no centre can't start or join a group.
 
 The backend checks both values, creates or updates that learner, and sets an HttpOnly session
 cookie. It then redirects to the bare app URL, so nothing stays in the address bar. There is no

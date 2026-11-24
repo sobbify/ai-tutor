@@ -1,5 +1,6 @@
 import type {
   Certificate,
+  GroupStatus,
   Home,
   Moment,
   MomentId,
@@ -55,6 +56,13 @@ export interface TutorApi {
   tellStory(text: string): Promise<Story>;
   deleteStory(id: number): Promise<void>;
   getCertificate(): Promise<Certificate>;
+  /** Her practice group (named, same centre, up to 5), or null. */
+  getGroup(): Promise<GroupStatus>;
+  createGroup(name: string): Promise<GroupStatus>;
+  /** Join with a colleague's invite code (letters and digits; spaces and dashes are ignored). */
+  joinGroup(code: string): Promise<GroupStatus>;
+  /** She can leave any time. */
+  leaveGroup(): Promise<void>;
 }
 
 export class ApiError extends Error {

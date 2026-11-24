@@ -84,4 +84,19 @@ describe('http tutor API — MVP endpoints', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json({ detail: 'Please accept first' }, 428)));
     await expect(createHttpApi('').startRun('morning-greeting')).rejects.toMatchObject({ code: 'consent_required' });
   });
+
+  it('talks to the group endpoints', async () => {
+    const status = { group: null, canJoin: true };
+    const fetchMock = vi.fn().mockImplementation(() => Promise.resolve(json(status)));
+    vi.stubGlobal('fetch', fetchMock);
+    const api = createHttpApi('');
+    await expect(api.getGroup()).resolves.toEqual(status);
+    await api.joinGroup('SUN4KD');
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      '/api/tutor/group/join',
+      expect.objectContaining({ method: 'POST', body: JSON.stringify({ code: 'SUN4KD' }) }),
+    );
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }));
+    await expect(api.leaveGroup()).resolves.toBeUndefined();
+  });
 });

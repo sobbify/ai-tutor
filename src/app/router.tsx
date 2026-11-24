@@ -18,6 +18,7 @@ export const routes: RouteObject[] = [
       { path: 'phrasebook', lazy: async () => ({ Component: (await import('@/features/phrasebook/PhrasebookPage')).default }) },
       { path: 'certificate', lazy: async () => ({ Component: (await import('@/features/certificate/CertificatePage')).default }) },
       { path: 'settings', lazy: async () => ({ Component: (await import('@/features/settings/SettingsPage')).default }) },
+      { path: 'group', lazy: async () => ({ Component: (await import('@/features/group/GroupPage')).default }) },
       {
         path: 'moments/:momentId',
         children: [

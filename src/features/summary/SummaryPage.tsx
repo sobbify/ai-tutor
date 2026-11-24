@@ -17,6 +17,7 @@ import { SaveLineButton } from '@/components/ui/SaveLineButton';
 import { SpeakerButton } from '@/components/ui/SpeakerButton';
 import { CategoryBadge, SaidTry } from '@/features/conversation/ChatBubbles';
 import type { JustFinishedState } from '@/features/conversation/useConversation';
+import { SnowflakeReward } from './SnowflakeReward';
 
 /** Screens 12 (just finished) and 13 (revisit). */
 export default function SummaryPage() {
@@ -50,6 +51,7 @@ export default function SummaryPage() {
       ) : (
         <main className="flex flex-1 flex-col px-5 pt-4 pb-[max(env(safe-area-inset-bottom),20px)]">
           <SummaryHero summary={summary.data} justFinished={justFinished} firstName={progress.data?.learner.firstName ?? ''} />
+          {justFinished && summary.data.snowflakes && <SnowflakeReward snowflakes={summary.data.snowflakes} />}
           <PractiseList summary={summary.data} />
 
           <div className="mt-3 flex gap-3">

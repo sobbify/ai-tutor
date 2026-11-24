@@ -36,10 +36,13 @@ from ..schemas import (
     PreferencesOut,
     ProgrammeOut,
     Recommendation,
+    SnowflakesOut,
     StoryOut,
     StreakOut,
 )
+from . import groups
 from . import programme as prog
+from . import snowflakes as sf
 from .content import published_moments
 from .journey import Journey
 from .story import StoryResult
@@ -73,6 +76,7 @@ async def home(journey: Journey) -> HomeOut:
         recommended = Recommendation(
             moment_id=pick.id, title=pick.title, reason="harder" if state.harder_today else "week"
         )
+    group = await groups.home_summary(db, learner, journey.tz)
     told_today = await db.scalar(
         select(Story.id).where(Story.learner_id == learner.id, Story.created_at >= _start_of_today(journey.tz)).limit(1)
     )
@@ -94,7 +98,18 @@ async def home(journey: Journey) -> HomeOut:
         recommended=recommended,
         story_suggested=state.harder_today and told_today is None,
         certificate_earned=learner.certificate_earned_at is not None,
+        snowflakes=await my_snowflakes(journey),
+        group=group,
+        group_invite=group is None and bool(learner.centre) and groups.invite_due(learner, state.complete),
     )
+
+
+async def my_snowflakes(journey: Journey) -> SnowflakesOut:
+    db, learner = journey.db, journey.learner
+    total = (await sf.totals(db, [learner.id], tz=journey.tz)).get(learner.id, 0)
+    since = sf.week_start(journey.today())
+    week = (await sf.totals(db, [learner.id], since_day=since, tz=journey.tz)).get(learner.id, 0)
+    return SnowflakesOut(total=total, week=week)
 
 
 def _start_of_today(tz: str) -> datetime:
@@ -146,10 +161,11 @@ async def update_preferences(db: AsyncSession, learner: Learner, body: Preferenc
 
 
 async def delete_my_data(db: AsyncSession, learner: Learner) -> None:
-    """FR-39: her practice history (transcripts), stories, phrasebook, levels and hidden profile — all
-    gone. Her consent and preferences stay so she isn't asked again. (Audio is never stored.)"""
+    """FR-39: her practice history (transcripts), stories, phrasebook, levels, hidden profile and group
+    membership — all gone. Her consent and preferences stay so she isn't asked again. (Audio is never stored.)"""
     for model in (Run, Story, PhrasebookEntry, PracticeDay, MomentLevel, LearnerProfile):
         await db.execute(delete(model).where(model.learner_id == learner.id))
+    await groups.leave(db, learner)  # her snowflakes are gone too, so she leaves her group
     learner.certificate_earned_at = None
     await db.flush()
 
@@ -239,6 +255,7 @@ def story_out(s: Story) -> StoryOut:
         tip=s.tip,
         better_line=s.better_line,
         created_at=s.created_at,
+        snowflakes=sf.STORY,
     )
 
 

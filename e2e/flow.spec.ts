@@ -70,6 +70,9 @@ test('day 0 to a finished moment, end to end', async ({ page }) => {
   await expectAccessible(page);
   await page.getByRole('link', { name: 'See Summary' }).click();
   await expect(page.getByRole('heading', { name: 'Well done, Priya!' })).toBeVisible();
+  // Snowflakes: XP for finishing, like Duolingo's end-of-lesson screen.
+  await expect(page.getByRole('heading', { name: 'You earned 15 snowflakes' })).toBeVisible();
+  await expect(page.getByText('35 snowflakes this week')).toBeVisible(); // first chat + this role-play + today's bonus
   await expectAccessible(page);
 
   await page.goto('/progress');
@@ -110,6 +113,25 @@ test('story, rehearse, certificate and settings screens are accessible', async (
   await expect(page.getByRole('heading', { name: 'Not yet earned' })).toBeVisible();
   await expectAccessible(page);
 
+  // Groups: start one, see the invite code, then join the demo group instead.
+  await page.goto('/group');
+  await expect(page.getByRole('heading', { name: 'Practise together' })).toBeVisible();
+  await expectAccessible(page);
+  await page.getByRole('textbox', { name: 'Group name' }).fill('Lotus Room');
+  await page.getByRole('button', { name: 'Start Group' }).click();
+  await expect(page.getByRole('heading', { name: 'Lotus Room' })).toBeVisible();
+  await expect(page.getByText('Teachers (1 of 5)')).toBeVisible();
+  await expectAccessible(page);
+  await page.getByRole('button', { name: 'Leave Group' }).click();
+  await page.getByRole('button', { name: 'Yes, Leave' }).click();
+  await page.getByRole('textbox', { name: 'Invite code' }).fill('sun-4kd');
+  await page.getByRole('button', { name: 'Join Group' }).click();
+  await expect(page.getByRole('heading', { name: 'Sunflower Room' })).toBeVisible();
+  await expect(page.getByText('Meera Iyer')).toBeVisible();
+  await expectAccessible(page);
+  await page.goto('/');
+  await expect(page.getByRole('link', { name: /Sunflower Room/ })).toBeVisible();
+
   await page.goto('/settings');
   await expect(page.getByRole('switch', { name: 'Quiet mode' })).toBeVisible();
   await expectAccessible(page);
@@ -119,7 +141,7 @@ test.describe('dark appearance', () => {
   test.use({ colorScheme: 'dark' });
 
   test('every main screen stays readable (WCAG AA) in the dark', async ({ page }) => {
-    await page.goto('/?demo=progress');
+    await page.goto('/?demo=group');
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
     await expectAccessible(page);
 
@@ -130,7 +152,7 @@ test.describe('dark appearance', () => {
     await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
     await expectAccessible(page);
 
-    for (const path of ['/practise', '/me', '/progress', '/phrasebook', '/rehearse', '/certificate', '/settings']) {
+    for (const path of ['/practise', '/me', '/group', '/progress', '/phrasebook', '/rehearse', '/certificate', '/settings']) {
       await page.goto(path);
       await page.waitForLoadState('networkidle');
       await expectAccessible(page);

@@ -1,4 +1,4 @@
-"""The door: the host app opens /in?uid=..&name=.. → HttpOnly session cookie → bare app URL."""
+"""The door: the host app opens /in?uid=..&name=..[&centre=..] → HttpOnly session cookie → bare app URL."""
 
 from __future__ import annotations
 
@@ -24,11 +24,13 @@ NO_STORE = {"Cache-Control": "no-store", "Referrer-Policy": "no-referrer"}
 
 @router.get("/in", include_in_schema=False)
 @router.get("/in/", include_in_schema=False)
-async def enter(request: Request, db: DB, uid: str | None = None, name: str | None = None) -> Response:
+async def enter(
+    request: Request, db: DB, uid: str | None = None, name: str | None = None, centre: str | None = None
+) -> Response:
     limit(request, "entry", client_ip(request))
     settings = state(request).settings
     try:
-        entry = EntryIn(uid=uid or "", name=name or "")
+        entry = EntryIn(uid=uid or "", name=name or "", centre=centre or None)
     except ValidationError:
         return message_page(
             400, "Can’t open AI Tutor", "The app sent an invalid ID or name. Please open AI Tutor again from the app."
@@ -36,13 +38,15 @@ async def enter(request: Request, db: DB, uid: str | None = None, name: str | No
 
     learner = await db.scalar(select(Learner).where(Learner.uid == entry.uid))
     if learner is None:
-        learner = Learner(uid=entry.uid, name=entry.name)
+        learner = Learner(uid=entry.uid, name=entry.name, centre=entry.centre)
         db.add(learner)
         await db.flush()
         log.info("learner_created", learner_id=learner.id)
     else:
         learner.name = entry.name
         learner.last_seen_at = utcnow()
+        if entry.centre:
+            learner.centre = entry.centre  # she may have moved centre; her group stays until she leaves it
 
     # One browser = one session: drop the cookie it already had, then issue a fresh token.
     old = request.cookies.get(settings.session_cookie)

@@ -9,7 +9,8 @@ import { TabBar } from '@/components/layout/TabBar';
 import { ErrorBlock, LoadingBlock } from '@/components/layout/StatusScreens';
 import { ButtonLink } from '@/components/ui/Button';
 import { HeroCard } from '@/components/ui/Card';
-import { ChevronRightIcon, FlameIcon, LockIcon } from '@/components/ui/Icons';
+import { ChevronRightIcon, FlameIcon, LockIcon, UsersIcon } from '@/components/ui/Icons';
+import { Snowflake } from '@/components/ui/Snowflake';
 import { Pill } from '@/components/ui/Pill';
 import { SegmentedProgress, type SegmentState } from '@/components/ui/Progress';
 import { MomentGlyph } from './MomentGlyph';
@@ -56,13 +57,21 @@ function HomeContent({ home, moments }: { home: Home; moments: MomentProgress[] 
           <h2 id="home-greeting" className="text-[19px] leading-7 font-bold">
             {t.journey.greeting(home.learner.firstName)}
           </h2>
-          {home.streak.days > 0 && (
-            <Pill tone="gold" className="mt-0.5 text-[13px]">
-              <FlameIcon size={14} />
-              <span className="sr-only">{t.home.streakA11y(home.streak.days)}</span>
-              <span aria-hidden="true">{home.streak.days}</span>
-            </Pill>
-          )}
+          <span className="mt-0.5 flex shrink-0 items-center gap-1.5">
+            {home.streak.days > 0 && (
+              <Pill tone="gold" className="text-[13px]">
+                <FlameIcon size={14} />
+                <span className="sr-only">{t.home.streakA11y(home.streak.days)}</span>
+                <span aria-hidden="true">{home.streak.days}</span>
+              </Pill>
+            )}
+            <Link viewTransition to="/me" className="rounded-full" aria-label={t.snowflakes.weekLabel(home.snowflakes.week)}>
+              <Pill tone="sky" className="gap-1 py-px pl-1.5 text-[13px]">
+                <Snowflake size={16} />
+                <span aria-hidden="true">{home.snowflakes.week}</span>
+              </Pill>
+            </Link>
+          </span>
         </div>
         <p className="mt-1 text-[14px] leading-5 font-semibold text-ink">{dayLabel}</p>
         <SegmentedProgress className="mt-3" segments={daySegments(home)} label={dayLabel} />
@@ -109,6 +118,44 @@ function HomeContent({ home, moments }: { home: Home; moments: MomentProgress[] 
           </span>
           <ChevronRightIcon size={18} className="text-ink-2" />
         </Link>
+      )}
+
+      {home.group ? (
+        <Link
+          viewTransition
+          to="/group"
+          className="mx-5 mt-3 flex items-center gap-3 rounded-card border border-line bg-surface px-4 py-3 shadow-card hover:bg-sky/20"
+        >
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-sky text-action" aria-hidden="true">
+            <UsersIcon size={22} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-[15.5px] font-bold">{t.group.homeTitle(home.group.name)}</span>
+            <span className="block text-[13px] font-semibold text-ink-2">{t.group.homeSub(home.group.weekTotal, home.group.weekGoal)}</span>
+            <span className="mt-1.5 block h-2 overflow-hidden rounded-full bg-line" aria-hidden="true">
+              <span
+                className="block h-full rounded-full bg-action"
+                style={{ width: `${home.group.weekGoal ? Math.min(100, (home.group.weekTotal / home.group.weekGoal) * 100) : 0}%` }}
+              />
+            </span>
+          </span>
+          <ChevronRightIcon size={18} className="text-ink-2" />
+        </Link>
+      ) : (
+        home.groupInvite && (
+          <section className="mx-5 mt-3 flex items-center gap-3 rounded-card bg-aqua px-4 py-3.5">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-surface text-action" aria-hidden="true">
+              <UsersIcon size={22} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-[15.5px] leading-6 font-bold">{t.group.inviteCardTitle}</p>
+              <p className="text-[13px] leading-[18px] text-ink-2">{t.group.inviteCardText}</p>
+            </div>
+            <ButtonLink to="/group" size="sm" className="h-9 shrink-0 px-3 text-[14px]">
+              {t.group.inviteCardCta}
+            </ButtonLink>
+          </section>
+        )
       )}
 
       <h2 className="mx-5 mt-6 text-[17px] font-extrabold">{t.home.programmeHeading}</h2>

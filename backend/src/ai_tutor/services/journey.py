@@ -23,10 +23,12 @@ from ..schemas import (
     ProgressOut,
     ReplyOut,
     RunOut,
+    SnowflakesEarned,
     SummaryOut,
     Trends,
 )
 from . import programme as prog
+from . import snowflakes as sf
 from .content import published_moments
 from .evaluator import EvaluationUnavailable, Evaluator, LineContext
 
@@ -283,7 +285,13 @@ class Journey:
             next_moment_id=nxt.id if nxt else None,
             practise=fixes(latest),
             previous_practise_count=len(fixes(previous[-1])) if previous else None,
+            snowflakes=await self._snowflakes(latest),
         )
+
+    async def _snowflakes(self, run: Run) -> SnowflakesEarned:
+        items = sf.run_items(run)
+        week = await sf.totals(self.db, [self.learner.id], since_day=sf.week_start(self.today()), tz=self.tz)
+        return SnowflakesEarned(earned=sum(i.amount for i in items), items=items, week=week.get(self.learner.id, 0))
 
     # ---- commands -------------------------------------------------------------------------
 

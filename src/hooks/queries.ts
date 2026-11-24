@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApi } from '@/api/ApiContext';
 import { clearOfflineData } from '@/lib/offline';
 import type { SubmitReplyInput } from '@/api/types';
-import type { MomentId, OnboardingInput, PreferencesUpdate, Reply, Run } from '@/types/tutor';
+import type { GroupStatus, MomentId, OnboardingInput, PreferencesUpdate, Reply, Run } from '@/types/tutor';
 
 export const queryKeys = {
   home: ['home'] as const,
@@ -12,6 +12,7 @@ export const queryKeys = {
   stories: ['stories'] as const,
   certificate: ['certificate'] as const,
   progress: ['progress'] as const,
+  group: ['group'] as const,
   moment: (id: MomentId) => ['moment', id] as const,
   run: (id: MomentId) => ['run', id] as const,
   summary: (id: MomentId) => ['summary', id] as const,
@@ -31,7 +32,7 @@ export function usePreferences() {
 function useRefreshJourney() {
   const qc = useQueryClient();
   return useCallback(() => {
-    for (const key of [queryKeys.home, queryKeys.progress, queryKeys.certificate]) void qc.invalidateQueries({ queryKey: key });
+    for (const key of [queryKeys.home, queryKeys.progress, queryKeys.certificate, queryKeys.group]) void qc.invalidateQueries({ queryKey: key });
   }, [qc]);
 }
 
@@ -197,7 +198,43 @@ export function useAdvance(id: MomentId) {
       if (run.completed) {
         void qc.invalidateQueries({ queryKey: queryKeys.summary(id) });
         void qc.invalidateQueries({ queryKey: queryKeys.certificate });
+        void qc.invalidateQueries({ queryKey: queryKeys.group }); // her week's snowflakes
       }
     },
   });
 }
+
+// ---- practice groups --------------------------------------------------------------------------------
+
+export function useGroup() {
+  const api = useApi();
+  return useQuery({ queryKey: queryKeys.group, queryFn: () => api.getGroup() });
+}
+
+function useGroupMutation<A>(fn: (arg: A) => Promise<GroupStatus | undefined>) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: fn,
+    onSuccess: (status) => {
+      if (status) qc.setQueryData(queryKeys.group, status);
+      else void qc.invalidateQueries({ queryKey: queryKeys.group });
+      void qc.invalidateQueries({ queryKey: queryKeys.home });
+    },
+  });
+}
+
+export function useCreateGroup() {
+  const api = useApi();
+  return useGroupMutation((name: string) => api.createGroup(name));
+}
+
+export function useJoinGroup() {
+  const api = useApi();
+  return useGroupMutation((code: string) => api.joinGroup(code));
+}
+
+export function useLeaveGroup() {
+  const api = useApi();
+  return useGroupMutation(() => api.leaveGroup().then(() => undefined));
+}
+

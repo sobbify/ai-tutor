@@ -12,6 +12,9 @@ from ..models import Learner
 from ..schemas import (
     Camel,
     CertificateOut,
+    GroupCreateIn,
+    GroupJoinIn,
+    GroupStatusOut,
     HomeOut,
     MomentOut,
     OnboardingIn,
@@ -27,6 +30,7 @@ from ..schemas import (
     StoryOut,
     SummaryOut,
 )
+from ..services import groups
 from ..services import learner as svc
 from ..services.content import to_public
 from ..services.evaluator import EvaluationUnavailable
@@ -248,3 +252,29 @@ async def delete_story(story_id: int, db: DB, learner: CurrentLearner) -> Respon
 async def certificate(request: Request, db: DB, learner: CurrentLearner) -> CertificateOut:
     """Only she sees it; sharing is her choice (downloaded or shared from her phone)."""
     return await svc.certificate(journey(request, db, learner))
+
+
+# ---- practice groups ------------------------------------------------------------------------------
+
+
+@router.get("/group", response_model=GroupStatusOut)
+async def my_group(request: Request, db: DB, learner: CurrentLearner) -> GroupStatusOut:
+    return await groups.status_for(db, learner, state(request).settings.school_timezone)
+
+
+@router.post("/group", response_model=GroupStatusOut, status_code=status.HTTP_201_CREATED)
+async def create_group(body: GroupCreateIn, request: Request, db: DB, learner: CurrentLearner) -> GroupStatusOut:
+    limit(request, "groups", learner.uid)
+    return await groups.create(db, learner, body.name, state(request).settings.school_timezone)
+
+
+@router.post("/group/join", response_model=GroupStatusOut)
+async def join_group(body: GroupJoinIn, request: Request, db: DB, learner: CurrentLearner) -> GroupStatusOut:
+    limit(request, "groups", learner.uid)  # codes can't be guessed by trying many
+    return await groups.join(db, learner, body.code, state(request).settings.school_timezone)
+
+
+@router.post("/group/leave", status_code=status.HTTP_204_NO_CONTENT)
+async def leave_group(db: DB, learner: CurrentLearner) -> Response:
+    await groups.leave(db, learner)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

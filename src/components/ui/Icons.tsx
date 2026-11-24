@@ -213,3 +213,25 @@ export const MeIcon = ({ filled, ...p }: TabIconProps) => (
     <path d="M4.5 20.2c.9-3.6 4-5.7 7.5-5.7s6.6 2.1 7.5 5.7a.7.7 0 0 1-.7.8H5.2a.7.7 0 0 1-.7-.8Z" fill={filled ? 'currentColor' : 'none'} />
   </Icon>
 );
+export const UsersIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <circle cx="9" cy="8" r="3.2" />
+    <path d="M3 19.5c.6-3.2 3-5 6-5s5.4 1.8 6 5" />
+    <path d="M15.5 5.2a3 3 0 0 1 0 5.6" />
+    <path d="M17.5 14.8c1.8.6 3 2.2 3.5 4.7" />
+  </Icon>
+);
+export const CopyIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="9" y="9" width="11" height="11" rx="2.5" />
+    <path d="M5 15V6.5A2.5 2.5 0 0 1 7.5 4H15" />
+  </Icon>
+);
+export const ShareIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M12 15V4" />
+    <path d="m8 8 4-4 4 4" />
+    <path d="M6 12v6.5A1.5 1.5 0 0 0 7.5 20h9a1.5 1.5 0 0 0 1.5-1.5V12" />
+  </Icon>
+);
+

@@ -4,6 +4,8 @@ import {
   ReplySchema,
   StorySchema,
   type Certificate,
+  type Group,
+  type GroupStatus,
   type Home,
   type Moment,
   type MomentId,
@@ -11,6 +13,8 @@ import {
   type Phrase,
   type Preferences,
   type Progress,
+  type SnowflakeItem,
+  type SnowflakesEarned,
   type Reply,
   type Run,
   type Story,
@@ -37,6 +41,8 @@ const StoredRunSchema = z.object({
   replies: z.array(ReplySchema),
   /** Feedback on the first attempt at each turn — this is what progress dots measure. */
   firstAttempts: z.record(z.string(), z.object({ transcript: z.string(), feedback: FeedbackSchema })),
+  /** Her local date when it was finished (snowflakes this week). */
+  completedOn: z.string().optional(),
 });
 type StoredRun = z.infer<typeof StoredRunSchema>;
 
@@ -52,6 +58,7 @@ const MockStateSchema = z.object({
   stories: z.array(StorySchema),
   certificateEarnedAt: z.string().nullable(),
   nextId: z.number(),
+  group: z.object({ name: z.string(), code: z.string(), createdByMe: z.boolean(), demo: z.boolean() }).nullable().default(null),
 });
 type MockState = z.infer<typeof MockStateSchema>;
 
@@ -67,7 +74,20 @@ const emptyState = (): MockState => ({
   stories: [],
   certificateEarnedAt: null,
   nextId: 1,
+  group: null,
 });
+
+/** Snowflakes: XP for effort (same numbers as backend/services/snowflakes.py). */
+export const SNOWFLAKES = { finished: 15, quick: 10, again: 2, againCap: 10, story: 10, daily: 5 } as const;
+const GROUP_MAX = 5;
+const GOAL_PER_MEMBER = 50;
+/** The demo group's code, and the colleagues already in it (mock only). */
+export const DEMO_GROUP_CODE = 'SUN4KD';
+const DEMO_COLLEAGUES = [
+  { name: 'Meera Iyer', weekSnowflakes: 45, practisedToday: true },
+  { name: 'Kavita Nair', weekSnowflakes: 30, practisedToday: false },
+  { name: 'Sunita Desai', weekSnowflakes: 20, practisedToday: true },
+];
 
 export interface KeyValueStore {
   getItem(key: string): string | null;
@@ -106,6 +126,7 @@ export interface MockApiOptions {
 export function createMockApi({ storage = safeStorage(), latencyMs = 350, onboarded = false, today = () => new Date() }: MockApiOptions = {}): TutorApi & {
   reset(): void;
   seedDemoProgress(): void;
+  seedDemoGroup(): void;
 } {
   const load = (): MockState => {
     try {
@@ -234,6 +255,44 @@ export function createMockApi({ storage = safeStorage(), latencyMs = 350, onboar
     if (!state.practiceDays.includes(day)) state.practiceDays.push(day);
   };
 
+  const weekStartIso = () => {
+    const d = today();
+    return isoDay(new Date(d.getFullYear(), d.getMonth(), d.getDate() - ((d.getDay() + 6) % 7)));
+  };
+  const runItems = (run: StoredRun): SnowflakeItem[] => {
+    if (!run.completed) return [];
+    const items: SnowflakeItem[] = [run.kind === 'quick' ? { kind: 'quick', amount: SNOWFLAKES.quick } : { kind: 'finished', amount: SNOWFLAKES.finished }];
+    const again = run.replies.reduce((n, r) => n + Math.max(0, (r.attempt ?? 1) - 1), 0);
+    if (again) items.push({ kind: 'again', amount: Math.min(SNOWFLAKES.againCap, again * SNOWFLAKES.again) });
+    return items;
+  };
+  const snowflakesOf = (state: MockState, since?: string) => {
+    const runs = Object.values(state.runs).flat().filter((r) => r.completed && (!since || (r.completedOn ?? '') >= since));
+    const stories = state.stories.filter((s) => !since || (s.createdAt ?? '').slice(0, 10) >= since);
+    const days = state.practiceDays.filter((d) => !since || d >= since);
+    return (
+      runs.reduce((n, r) => n + runItems(r).reduce((m, i) => m + i.amount, 0), 0) +
+      stories.length * SNOWFLAKES.story +
+      days.length * SNOWFLAKES.daily
+    );
+  };
+  const groupOf = (state: MockState): Group | null => {
+    if (!state.group) return null;
+    const me = { name: `${LEARNER.firstName} Sharma`, firstName: LEARNER.firstName, isMe: true, weekSnowflakes: snowflakesOf(state, weekStartIso()), practisedToday: state.practiceDays.includes(todayIso()) };
+    const others = state.group.demo ? DEMO_COLLEAGUES.map((c) => ({ ...c, firstName: c.name.split(' ')[0] ?? c.name, isMe: false })) : [];
+    const members = [me, ...others].sort((a, b) => b.weekSnowflakes - a.weekSnowflakes);
+    return {
+      name: state.group.name,
+      code: state.group.code,
+      members,
+      maxMembers: GROUP_MAX,
+      weekTotal: members.reduce((n, m) => n + m.weekSnowflakes, 0),
+      weekGoal: GOAL_PER_MEMBER * members.length,
+      createdByMe: state.group.createdByMe,
+    };
+  };
+  const groupStatus = (state: MockState): GroupStatus => ({ group: groupOf(state), canJoin: true });
+
   const allowedLine = (state: MockState, text: string): string | null => {
     for (const m of MOMENTS) {
       if (m.turns.some((t) => (t.hint.kind === 'sentence' ? t.hint.text === text : t.hint.options.includes(text)))) return 'hint';
@@ -267,6 +326,12 @@ export function createMockApi({ storage = safeStorage(), latencyMs = 350, onboar
         recommended,
         storySuggested: ps.harderToday && !toldToday,
         certificateEarned: state.certificateEarnedAt !== null,
+        snowflakes: { total: snowflakesOf(state), week: snowflakesOf(state, weekStartIso()) },
+        group: (() => {
+          const g = groupOf(state);
+          return g ? { name: g.name, members: g.members.length, weekTotal: g.weekTotal, weekGoal: g.weekGoal } : null;
+        })(),
+        groupInvite: !state.group && ps.complete,
       });
     },
 
@@ -302,6 +367,7 @@ export function createMockApi({ storage = safeStorage(), latencyMs = 350, onboar
         nudgeTime: state.nudgeTime,
         hardestMomentId: state.hardestMomentId,
         runs: baseline ? { [baseline.id]: runsOf(state, baseline.id) } : {},
+        group: null, // her snowflakes are gone too, so she leaves her group
       });
       return wait(undefined);
     },
@@ -393,6 +459,7 @@ export function createMockApi({ storage = safeStorage(), latencyMs = 350, onboar
       if (!turn || !run.replies.some((r) => r.turnId === turn.id)) throw new ApiError('Reply to this line first', 409, 'conflict');
       if (run.turnIndex >= turns.length - 1) {
         run.completed = true;
+        run.completedOn = todayIso();
         if (run.kind === 'full' && m.kind !== 'baseline') {
           const right = turns.filter((t) => run.firstAttempts[t.id]?.feedback.fix === null).length / turns.length;
           const current = state.levels[id] ?? 1;
@@ -433,6 +500,10 @@ export function createMockApi({ storage = safeStorage(), latencyMs = 350, onboar
         nextMomentId: next?.id ?? null,
         practise: fixesOf(last),
         previousPractiseCount: before ? fixesOf(before).length : null,
+        snowflakes: ((): SnowflakesEarned => {
+          const items = runItems(last);
+          return { earned: items.reduce((n, i) => n + i.amount, 0), items, week: snowflakesOf(state, weekStartIso()) };
+        })(),
       });
     },
 
@@ -468,7 +539,7 @@ export function createMockApi({ storage = safeStorage(), latencyMs = 350, onboar
       requireConsent(state);
       const clean = text.trim().replace(/\b(named|called|name is)\s+[A-Z][a-z]+/g, '$1 [name]');
       if (clean.split(/\s+/).length < 3) {
-        return wait({ id: null, heard: false, transcript: '', positives: [], fix: null, tip: null, betterLine: null, createdAt: null });
+        return wait({ id: null, heard: false, transcript: '', positives: [], fix: null, tip: null, betterLine: null, createdAt: null, snowflakes: 0 });
       }
       const agreement = /\b(he|she) (eat|play|sleep|cry)\b/i.exec(clean);
       const story: Story = {
@@ -480,6 +551,7 @@ export function createMockApi({ storage = safeStorage(), latencyMs = 350, onboar
         tip: agreement ? 'With he or she, add -s: “She eats”, “He plays”.' : null,
         betterLine: 'Thank you for asking. She had a good day and enjoyed her lunch.',
         createdAt: `${todayIso()}T12:00:00`,
+        snowflakes: SNOWFLAKES.story,
       };
       state.stories.push(story);
       markPractised(state);
@@ -512,8 +584,51 @@ export function createMockApi({ storage = safeStorage(), latencyMs = 350, onboar
       });
     },
 
+    async getGroup() {
+      return wait(groupStatus(load()));
+    },
+
+    async createGroup(name) {
+      const state = load();
+      requireConsent(state);
+      if (state.group) throw new ApiError("You're already in a group. Leave it to start a new one.", 409, 'conflict');
+      const clean = name.split(/\s+/).filter(Boolean).join(' ').slice(0, 40);
+      if (!clean) throw new ApiError('Enter a group name.', 422, 'server');
+      const code = Array.from({ length: 6 }, () => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random() * 32)]).join('');
+      state.group = { name: clean, code, createdByMe: true, demo: false };
+      save(state);
+      return wait(groupStatus(state));
+    },
+
+    async joinGroup(code) {
+      const state = load();
+      requireConsent(state);
+      const clean = code.toUpperCase().replace(/[^A-Z0-9]/g, '');
+      if (state.group?.code === clean) return wait(groupStatus(state));
+      if (state.group) throw new ApiError("You're already in a group. Leave it to join another.", 409, 'conflict');
+      if (clean !== DEMO_GROUP_CODE) throw new ApiError('No group has that code. Check it with your colleague.', 404, 'not_found');
+      state.group = { name: 'Sunflower Room', code: DEMO_GROUP_CODE, createdByMe: false, demo: true };
+      save(state);
+      return wait(groupStatus(state));
+    },
+
+    async leaveGroup() {
+      const state = load();
+      state.group = null;
+      save(state);
+      return wait(undefined);
+    },
+
     reset() {
       storage.removeItem(STORAGE_KEY);
+    },
+
+    /** Puts her in the demo group with three colleagues (screenshots, demos). */
+    seedDemoGroup() {
+      const state = load();
+      state.consented = true;
+      state.group = { name: 'Sunflower Room', code: DEMO_GROUP_CODE, createdByMe: false, demo: true };
+      save(state);
     },
 
     /** Recreates the "14 Journey, in progress" state from the design, for demos and reviews. */
@@ -523,7 +638,7 @@ export function createMockApi({ storage = safeStorage(), latencyMs = 350, onboar
       const runsFor = (m: MockMoment, count: number, wrongFirst: string[], wrongLatest: string[]): StoredRun[] =>
         Array.from({ length: count }, (_, i) => {
           const wrong = i === count - 1 && count > 1 ? wrongLatest : wrongFirst;
-          const run: StoredRun = { runNumber: i + 1, turnIndex: 0, completed: true, kind: 'full', level: 1, replies: [], firstAttempts: {} };
+          const run: StoredRun = { runNumber: i + 1, turnIndex: 0, completed: true, kind: 'full', level: 1, replies: [], firstAttempts: {}, completedOn: isoDay(today()) };
           const turns = runTurns(m, run);
           run.turnIndex = turns.length - 1;
           run.replies = turns.map((t) => {

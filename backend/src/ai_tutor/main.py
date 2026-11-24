@@ -96,6 +96,7 @@ def create_app(
             "replies": RateLimiter(settings.reply_rate_per_minute),
             "voice": RateLimiter(settings.voice_rate_per_minute),
             "host": RateLimiter(60),
+            "groups": RateLimiter(10),
             "admin_login": RateLimiter(settings.admin_login_per_minute_ip),
         },
     )

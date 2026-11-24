@@ -157,6 +157,22 @@ export const PractiseItemSchema = z.object({
 });
 export type PractiseItem = z.infer<typeof PractiseItemSchema>;
 
+// ---- snowflakes (XP for effort, never for accuracy) -----------------------------------------------
+
+export const SnowflakeItemSchema = z.object({
+  kind: z.enum(['finished', 'quick', 'again', 'story', 'daily']),
+  amount: z.number().int().min(0),
+});
+export type SnowflakeItem = z.infer<typeof SnowflakeItemSchema>;
+
+/** What one session earned (its end screen, like Duolingo's XP) and her week so far. */
+export const SnowflakesEarnedSchema = z.object({
+  earned: z.number().int().min(0),
+  items: z.array(SnowflakeItemSchema),
+  week: z.number().int().min(0),
+});
+export type SnowflakesEarned = z.infer<typeof SnowflakesEarnedSchema>;
+
 export const SummarySchema = z.object({
   momentId: MomentIdSchema,
   title: z.string(),
@@ -167,6 +183,7 @@ export const SummarySchema = z.object({
   practise: z.array(PractiseItemSchema),
   /** How many sentences to practise there were on the previous run (null on the first run). */
   previousPractiseCount: z.number().int().min(0).nullable(),
+  snowflakes: SnowflakesEarnedSchema.nullable().optional(),
 });
 export type Summary = z.infer<typeof SummarySchema>;
 
@@ -193,6 +210,13 @@ export const HomeSchema = z.object({
     .nullable(),
   storySuggested: z.boolean(),
   certificateEarned: z.boolean(),
+  snowflakes: z.object({ total: z.number().int().min(0), week: z.number().int().min(0) }).default({ total: 0, week: 0 }),
+  group: z
+    .object({ name: z.string(), members: z.number().int().min(1), weekTotal: z.number().int().min(0), weekGoal: z.number().int().min(0) })
+    .nullable()
+    .default(null),
+  /** The PRD's group invite: once she finishes the programme, or 30 days after joining. */
+  groupInvite: z.boolean().default(false),
 });
 export type Home = z.infer<typeof HomeSchema>;
 
@@ -236,6 +260,7 @@ export const StorySchema = z.object({
   tip: z.string().nullable(),
   betterLine: z.string().nullable(),
   createdAt: z.string().nullable(),
+  snowflakes: z.number().int().min(0).default(0),
 });
 export type Story = z.infer<typeof StorySchema>;
 
@@ -249,3 +274,34 @@ export const CertificateSchema = z.object({
   momentsLeft: z.array(z.string()),
 });
 export type Certificate = z.infer<typeof CertificateSchema>;
+
+// ---- practice groups (named; up to 5 teachers from one centre) --------------------------------------
+
+/** What members see of each other: name and effort. Never feedback, transcripts or levels. */
+export const GroupMemberSchema = z.object({
+  name: z.string(),
+  firstName: z.string(),
+  isMe: z.boolean(),
+  weekSnowflakes: z.number().int().min(0),
+  practisedToday: z.boolean(),
+});
+export type GroupMember = z.infer<typeof GroupMemberSchema>;
+
+export const GroupSchema = z.object({
+  name: z.string(),
+  code: z.string(),
+  members: z.array(GroupMemberSchema),
+  maxMembers: z.number().int().min(1),
+  weekTotal: z.number().int().min(0),
+  weekGoal: z.number().int().min(0),
+  createdByMe: z.boolean(),
+});
+export type Group = z.infer<typeof GroupSchema>;
+
+export const GroupStatusSchema = z.object({
+  group: GroupSchema.nullable(),
+  /** False when the host app didn't send her centre: groups only mix teachers of one centre. */
+  canJoin: z.boolean(),
+});
+export type GroupStatus = z.infer<typeof GroupStatusSchema>;
+

@@ -16,6 +16,10 @@ export function createApi(): TutorApi {
   const mock = createMockApi();
   const demo = new URLSearchParams(window.location.search).get('demo');
   if (demo === 'progress') mock.seedDemoProgress();
+  if (demo === 'group') {
+    mock.seedDemoProgress();
+    mock.seedDemoGroup();
+  }
   if (demo === 'reset') mock.reset();
   if (demo) {
     const url = new URL(window.location.href);

@@ -159,6 +159,29 @@ class MomentRef(Camel):
     title: str
 
 
+# ---- snowflakes (XP for effort) -------------------------------------------------------------
+
+SnowflakeKind = Literal["finished", "quick", "again", "story", "daily"]
+
+
+class SnowflakeItem(Camel):
+    kind: SnowflakeKind
+    amount: int
+
+
+class SnowflakesEarned(Camel):
+    """What one session earned (shown at its end, like Duolingo's XP screen) and her week so far."""
+
+    earned: int
+    items: list[SnowflakeItem]
+    week: int
+
+
+class SnowflakesOut(Camel):
+    total: int
+    week: int
+
+
 class SummaryOut(Camel):
     moment_id: str
     title: str
@@ -167,6 +190,7 @@ class SummaryOut(Camel):
     next_moment_id: str | None
     practise: list[PractiseItem]
     previous_practise_count: int | None
+    snowflakes: SnowflakesEarned | None = None
 
 
 class StartRunIn(Camel):
@@ -201,6 +225,13 @@ class Recommendation(Camel):
     reason: Literal["continue", "hardest", "week", "harder"]
 
 
+class HomeGroupOut(Camel):
+    name: str
+    members: int
+    week_total: int
+    week_goal: int
+
+
 class HomeOut(Camel):
     learner: LearnerOut
     consented: bool
@@ -210,6 +241,10 @@ class HomeOut(Camel):
     recommended: Recommendation | None
     story_suggested: bool
     certificate_earned: bool
+    snowflakes: SnowflakesOut = SnowflakesOut(total=0, week=0)
+    group: HomeGroupOut | None = None
+    # PRD: the group invite comes when she finishes the programme or 30 days after joining.
+    group_invite: bool = False
 
 
 class PreferencesOut(Camel):
@@ -256,6 +291,7 @@ class StoryOut(Camel):
     tip: str | None
     better_line: str | None
     created_at: datetime | None
+    snowflakes: int = 0
 
 
 class StoryIn(Camel):
@@ -282,6 +318,8 @@ class EntryIn(Camel):
 
     uid: str = Field(min_length=1, max_length=128, pattern=UID_PATTERN)
     name: str = Field(min_length=1, max_length=80)
+    # Her centre's ID in Buddy's World. Optional: without it, she can't join a group.
+    centre: str | None = Field(default=None, max_length=64, pattern=UID_PATTERN)
 
     @field_validator("uid")
     @classmethod
@@ -312,3 +350,50 @@ class AdminLoginIn(Camel):
 
 class AdminMeOut(Camel):
     username: str
+
+
+# ---- groups ----------------------------------------------------------------------------------
+
+GROUP_CODE = r"^[A-Za-z0-9 -]{4,16}$"
+
+
+class GroupMemberOut(Camel):
+    """What group members see of each other: name and effort. Never feedback, transcripts or levels."""
+
+    name: str
+    first_name: str
+    is_me: bool
+    week_snowflakes: int
+    practised_today: bool
+
+
+class GroupOut(Camel):
+    name: str
+    code: str
+    members: list[GroupMemberOut]
+    max_members: int
+    week_total: int
+    week_goal: int
+    created_by_me: bool
+
+
+class GroupStatusOut(Camel):
+    group: GroupOut | None
+    # False when the host app hasn't told us her centre: groups only mix teachers of one centre.
+    can_join: bool
+
+
+class GroupCreateIn(Camel):
+    name: str = Field(min_length=1, max_length=40)
+
+    @field_validator("name")
+    @classmethod
+    def _name(cls, v: str) -> str:
+        v = " ".join(v.split())
+        if not v or any(ord(c) < 32 for c in v) or any(c in v for c in "<>"):
+            raise ValueError("Enter a group name.")
+        return v
+
+
+class GroupJoinIn(Camel):
+    code: str = Field(pattern=GROUP_CODE)

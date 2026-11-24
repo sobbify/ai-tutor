@@ -1,9 +1,10 @@
-import { TalkingAvatar } from '@interviewflowai/talking-avatar';
-import femaleUrl from '@interviewflowai/talking-avatar/avatars/female.glb?url';
-import maleUrl from '@interviewflowai/talking-avatar/avatars/male.glb?url';
-import modelUrl from '@interviewflowai/talking-avatar/viseme-model.bin?url';
-import { useEffect, useRef } from 'react';
-import { expectStageSpeaker, setStageSpeaker } from '@/lib/speech';
+import { TalkingAvatar } from "@interviewflowai/talking-avatar";
+import femaleUrl from "@interviewflowai/talking-avatar/avatars/female.glb?url";
+import maleUrl from "@interviewflowai/talking-avatar/avatars/male.glb?url";
+import modelUrl from "@interviewflowai/talking-avatar/viseme-model.bin?url";
+import { useEffect, useRef } from "react";
+import { leadMouth, warmAudio } from "@/lib/lipSync";
+import { expectStageSpeaker, setStageSpeaker } from "@/lib/speech";
 
 /**
  * The parent as a talking 3D head (@interviewflowai/talking-avatar, MIT; Microsoft Rocketbox avatars).
@@ -45,7 +46,7 @@ export default function TalkingParent({
             loaded();
             callbacks.current.onFail();
           } else {
-            console.warn('3D avatar:', error.message); // e.g. a line it couldn't analyse; the audio still plays
+            console.warn("3D avatar:", error.message); // e.g. a line it couldn't analyse; the audio still plays
           }
         },
       });
@@ -55,11 +56,16 @@ export default function TalkingParent({
       return;
     }
     avatar.current = instance;
+    leadMouth(instance);
     instance.ready.then(
       () => {
         if (!live) return;
         ready = true;
-        unregister = setStageSpeaker({ speak: (audio) => instance.speak(audio), stop: () => instance.stopSpeaking() });
+        warmAudio(instance);
+        unregister = setStageSpeaker({
+          speak: (audio) => instance.speak(audio),
+          stop: () => instance.stopSpeaking(),
+        });
         loaded();
         callbacks.current.onReady();
       },
@@ -78,7 +84,7 @@ export default function TalkingParent({
   }, [man]);
 
   useEffect(() => {
-    avatar.current?.setStatus(thinking ? 'thinking' : 'listening');
+    avatar.current?.setStatus(thinking ? "thinking" : "listening");
   }, [thinking]);
 
   return <div ref={box} className="absolute inset-0" aria-hidden="true" />;

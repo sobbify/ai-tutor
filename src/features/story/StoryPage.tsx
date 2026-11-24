@@ -11,6 +11,7 @@ import { Screen } from '@/components/layout/Screen';
 import { Button } from '@/components/ui/Button';
 import { HeroCard } from '@/components/ui/Card';
 import { CheckIcon, KeyboardIcon, MicIcon, StopIcon, TrashIcon } from '@/components/ui/Icons';
+import { Snowflake } from '@/components/ui/Snowflake';
 import { SaveLineButton } from '@/components/ui/SaveLineButton';
 import { SpeakerButton } from '@/components/ui/SpeakerButton';
 import { HighlightedText, SaidTry } from '@/features/conversation/ChatBubbles';
@@ -206,6 +207,12 @@ function StoryResult({ story, onAgain }: { story: Story; onAgain: () => void }) 
   }
   return (
     <article className="flex flex-col gap-3" aria-live="polite">
+      {story.snowflakes > 0 && (
+        <p className="flex animate-rise items-center justify-center gap-1.5 self-center rounded-full border-2 border-[#7fd3ff] bg-surface px-3.5 py-1 text-[15px] font-extrabold text-action">
+          <Snowflake size={20} className="animate-pop" />
+          {t.snowflakes.earnedLabel(story.snowflakes)}
+        </p>
+      )}
       <section className="rounded-card bg-sky px-4 py-3">
         <h2 className="text-[13px] font-bold tracking-wide text-action uppercase">{t.story.youSaid}</h2>
         <p className="mt-1 text-[15.5px] leading-6">
