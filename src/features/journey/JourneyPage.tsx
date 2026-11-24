@@ -13,7 +13,7 @@ import { ChevronRightIcon, FlameIcon, LockIcon } from '@/components/ui/Icons';
 import { Pill } from '@/components/ui/Pill';
 import { SegmentedProgress, type SegmentState } from '@/components/ui/Progress';
 import { MomentGlyph } from './MomentGlyph';
-import { JourneyMap } from './JourneyMap';
+import { ProgrammePath } from './ProgrammePath';
 
 /** Home tab: today's programme day, her moment for today and the 3-week map (02 / 14). */
 export default function JourneyPage() {
@@ -46,7 +46,6 @@ function daySegments(home: Home): SegmentState[] {
 }
 
 function HomeContent({ home, moments }: { home: Home; moments: MomentProgress[] }) {
-  const programme = moments.filter((m) => m.kind === 'programme').sort((a, b) => a.order - b.order);
   const p = home.programme;
   const dayLabel = `${t.home.dayOf(p.day, p.totalDays)} · ${t.home.week(p.week, p.weekTitle)}`;
 
@@ -113,7 +112,7 @@ function HomeContent({ home, moments }: { home: Home; moments: MomentProgress[] 
       )}
 
       <h2 className="mx-5 mt-6 text-[17px] font-extrabold">{t.home.programmeHeading}</h2>
-      <JourneyMap moments={programme} />
+      <ProgrammePath moments={moments} daysPractised={p.daysPractised} />
 
     </>
   );

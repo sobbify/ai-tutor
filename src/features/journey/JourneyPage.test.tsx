@@ -12,9 +12,18 @@ describe('Home', () => {
     expect(screen.getByRole('link', { name: 'Start Morning Greeting at Drop-off' })).toHaveAttribute('href', '/moments/morning-greeting/learn');
 
     const map = screen.getByRole('region', { name: 'Your practice journey' });
-    expect(within(map).getByRole('link', { name: /Morning Greeting at Drop-off/ })).toHaveAttribute('href', '/moments/morning-greeting/learn');
-    expect(within(map).getByRole('link', { name: /Pick-up Update/ })).toBeInTheDocument();
-    expect(within(map).getAllByText('Locked')).toHaveLength(2);
+    // A Duolingo-style path: learn + role-play steps per moment, a chest at the end of each week.
+    expect(within(map).getByRole('link', { name: 'Morning Greeting at Drop-off, Key phrases and a tip, start here' })).toHaveAttribute(
+      'href',
+      '/moments/morning-greeting/learn',
+    );
+    expect(within(map).getByText('Start')).toBeInTheDocument();
+    expect(within(map).getByRole('link', { name: /^Pick-up Update, Key phrases and a tip, open$/ })).toHaveAttribute('href', '/moments/pickup-update/learn');
+    expect(within(map).getByRole('img', { name: /^Week 1 reward, locked$/ })).toBeInTheDocument();
+    // Weeks 2 and 3 open later: their banners say so and their steps are locked, not links.
+    expect(within(map).getAllByText('Opens soon')).toHaveLength(2);
+    expect(within(map).getByRole('img', { name: /^Parent Meeting, Key phrases and a tip, locked$/ })).toBeInTheDocument();
+    expect(within(map).queryByRole('link', { name: /Parent Meeting/ })).not.toBeInTheDocument();
 
     expect(screen.getByRole('link', { name: /See Progress/ })).toHaveAttribute('href', '/progress');
 
@@ -50,11 +59,13 @@ describe('Home', () => {
     const api = testApi();
     api.seedDemoProgress();
     renderRoute('/', api);
-    expect(await screen.findByRole('link', { name: /Morning Greeting at Drop-off\s*Done · summary/ })).toHaveAttribute(
+    expect(await screen.findByRole('link', { name: 'Morning Greeting at Drop-off, Role-play, Done · see summary, done' })).toHaveAttribute(
       'href',
       '/moments/morning-greeting/summary',
     );
-    expect(screen.getByRole('link', { name: /Parent Meeting\s*Response 5 of \d+\s*Continue/ })).toHaveAttribute('href', '/moments/parent-meeting');
+    expect(screen.getByRole('link', { name: /^Parent Meeting, Role-play, Response 5 of \d+, start here$/ })).toHaveAttribute('href', '/moments/parent-meeting');
+    expect(within(screen.getByRole('region', { name: 'Your practice journey' })).getByText('Continue')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /^Week 1 complete!, done$/ })).toHaveAttribute('href', '/progress');
     expect(screen.getByText(/Your private streak/)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Continue Parent Meeting' })).toHaveAttribute('href', '/moments/parent-meeting');
   });
