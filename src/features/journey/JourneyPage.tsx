@@ -130,7 +130,7 @@ function HomeContent({ home, moments }: { home: Home; moments: MomentProgress[] 
             <UsersIcon size={22} />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block truncate text-[15.5px] font-bold">{t.group.homeTitle(home.group.name)}</span>
+            <span className="line-clamp-2 block text-[15.5px] leading-[21px] font-bold break-words">{t.group.homeTitle(home.group.name)}</span>
             <span className="block text-[13px] font-semibold text-ink-2">{t.group.homeSub(home.group.weekTotal, home.group.weekGoal)}</span>
             <span className="mt-1.5 block h-2 overflow-hidden rounded-full bg-line" aria-hidden="true">
               <span

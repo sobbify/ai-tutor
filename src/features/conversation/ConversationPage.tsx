@@ -105,7 +105,10 @@ export default function ConversationPage() {
 
         {cardOpen && c.reply && (
           <div className="shrink-0 px-4 pb-2">
-            <CorrectionCard reply={c.reply} momentId={moment.id} seconds={seconds} onDismiss={() => setDocked(replyKey)} onRetry={c.sayItAgain} />
+            <CorrectionCard reply={c.reply} momentId={moment.id} seconds={seconds} onDismiss={() => setDocked(replyKey)} onRetry={() => {
+              c.sayItAgain();
+              if (c.typing) requestTypingFocus();
+            }} />
           </div>
         )}
 
@@ -327,7 +330,10 @@ function CallControls({
     main = (
       <button
         type="button"
-        onClick={c.goOn}
+        onClick={() => {
+          if (c.typing) requestTypingFocus(); // the next line's reply box takes the cursor
+          c.goOn();
+        }}
         disabled={c.advancing}
         aria-busy={c.advancing}
         aria-label={t.conversation.continue}
@@ -379,7 +385,11 @@ function CallControls({
           label={c.typing ? t.conversation.speakInstead : t.conversation.typeInstead}
           pressed={c.typing}
           tone={c.typing && (phase === 'turn' || phase === 'not-heard') ? 'on' : 'idle'}
-          onClick={() => c.setTyping(!c.typing)}
+          onClick={() => {
+            const next = !c.typing;
+            c.setTyping(next);
+            if (next) requestTypingFocus();
+          }}
           disabled={phase !== 'turn' && phase !== 'not-heard'}
         >
           <KeyboardIcon size={22} />
@@ -407,8 +417,29 @@ function CallControls({
   );
 }
 
+/**
+ * Keyboard flow: switching to typing, or "Say It Again" while typing, puts the cursor in the reply
+ * box. A flag covers the box that's about to mount; the event covers the one already there.
+ */
+const TYPING_FOCUS = 'elsa:typing-focus';
+let typingFocusPending = false;
+function requestTypingFocus() {
+  typingFocusPending = true;
+  window.dispatchEvent(new Event(TYPING_FOCUS));
+}
+
 function TypingBox({ onSend }: { onSend: (text: string) => void }) {
   const [text, setText] = useState('');
+  const box = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    const focus = () => {
+      typingFocusPending = false;
+      box.current?.focus();
+    };
+    if (typingFocusPending) focus();
+    window.addEventListener(TYPING_FOCUS, focus);
+    return () => window.removeEventListener(TYPING_FOCUS, focus);
+  }, []);
   return (
     <form
       className="flex items-end gap-2"
@@ -420,12 +451,22 @@ function TypingBox({ onSend }: { onSend: (text: string) => void }) {
       <label className="flex-1">
         <span className="sr-only">{t.conversation.typeLabel}</span>
         <textarea
+          ref={box}
           value={text}
           onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => {
+            // Enter sends, like a chat; Shift+Enter makes a new line.
+            if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+              e.preventDefault();
+              if (text.trim()) onSend(text);
+            }
+          }}
+          aria-keyshortcuts="Enter"
+          enterKeyHint="send"
           rows={2}
           maxLength={2000}
           placeholder={t.conversation.typePlaceholder}
-          className="block w-full resize-none rounded-[18px] border-2 border-line bg-surface px-3.5 py-2.5 text-[16px] leading-6 focus:border-action focus:outline-none"
+          className="block w-full resize-none rounded-[18px] border-2 border-line bg-surface px-3.5 py-2.5 text-[16px] leading-6 focus:border-action focus-visible:outline-offset-1"
         />
       </label>
       <Button type="submit" size="md" disabled={!text.trim()}>

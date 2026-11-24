@@ -216,6 +216,21 @@ describe('Conversation', () => {
     expect(improved).toHaveTextContent(/Now:\s*Don’t worry, she \(improved: will\) settle \(improved: in\) quickly\./);
   });
 
+  it('typing works from the keyboard: the box takes the cursor, Enter sends, focus lands on the feedback', async () => {
+    const user = userEvent.setup();
+    renderRoute('/moments/morning-greeting');
+    await user.click(await screen.findByRole('button', { name: 'Type instead' }));
+    const box = await screen.findByRole('textbox', { name: 'Type your reply' });
+    expect(box).toHaveFocus();
+    await user.keyboard('Don’t worry, she settle quickly.{Shift>}{Enter}{/Shift}');
+    expect(box).toHaveValue('Don’t worry, she settle quickly.\n'); // Shift+Enter: a new line
+    await user.keyboard('{Enter}');
+    const card = await screen.findByRole('region', { name: 'Grammar Fix' });
+    expect(card).toHaveFocus();
+    await user.click(within(card).getByRole('button', { name: 'Say It Again' }));
+    expect(await screen.findByRole('textbox', { name: 'Type your reply' })).toHaveFocus();
+  });
+
   it('the first chat never shows marks and returns home at the end', async () => {
     const user = userEvent.setup();
     const { router } = renderRoute('/moments/hello-elsa');

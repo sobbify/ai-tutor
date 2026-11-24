@@ -88,7 +88,7 @@ function CreateForm() {
           maxLength={40}
           placeholder={t.group.namePlaceholder}
           autoComplete="off"
-          className="-mt-1.5 h-12 rounded-[14px] border-2 border-line bg-surface px-3.5 text-[16px] focus:border-action focus:outline-none"
+          className="-mt-1.5 h-12 rounded-[14px] border-2 border-line bg-surface px-3.5 text-[16px] focus:border-action focus-visible:outline-offset-1"
         />
         <FormError error={create.error} />
         <Button type="submit" block disabled={!name.trim() || create.isPending} aria-busy={create.isPending}>
@@ -123,7 +123,7 @@ function JoinForm() {
           autoComplete="off"
           autoCapitalize="characters"
           spellCheck={false}
-          className="-mt-1.5 h-12 rounded-[14px] border-2 border-line bg-surface px-3.5 text-[18px] font-bold tracking-[0.2em] uppercase focus:border-action focus:outline-none"
+          className="-mt-1.5 h-12 rounded-[14px] border-2 border-line bg-surface px-3.5 text-[18px] font-bold tracking-[0.2em] uppercase focus:border-action focus-visible:outline-offset-1"
         />
         <FormError error={join.error} />
         <Button type="submit" variant="outline" block disabled={clean.length < 4 || join.isPending} aria-busy={join.isPending}>
@@ -247,9 +247,9 @@ function MemberRow({ member, rank }: { member: GroupMember; rank: number }) {
         {member.firstName.slice(0, 1).toUpperCase()}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="flex items-center gap-1.5">
-          <span className="truncate text-[16px] leading-6 font-bold">{member.name}</span>
-          {member.isMe && <span className="shrink-0 rounded-full bg-action px-2 py-0.5 text-[11.5px] font-extrabold text-on-action">{t.group.you}</span>}
+        <span className="flex items-start gap-1.5">
+          <span className="line-clamp-2 text-[16px] leading-[21px] font-bold break-words">{member.name}</span>
+          {member.isMe && <span className="mt-0.5 shrink-0 rounded-full bg-action px-2 py-0.5 text-[11.5px] font-extrabold text-on-action">{t.group.you}</span>}
         </span>
         <span className="flex items-center gap-1.5 text-[13px] leading-[18px] font-semibold text-ink-2">
           <span className={cn('size-2 rounded-full', member.practisedToday ? 'bg-[#16a34a]' : 'bg-line')} aria-hidden="true" />

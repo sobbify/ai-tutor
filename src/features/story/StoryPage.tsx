@@ -179,7 +179,7 @@ function TypedStory({ busy, onSend, onSpeak }: { busy: boolean; onSend: (text: s
           rows={5}
           maxLength={3000}
           placeholder={t.story.typePlaceholder}
-          className="mt-1.5 block w-full resize-none rounded-[18px] border-2 border-line bg-surface px-3.5 py-2.5 text-[16px] leading-6 font-normal focus:border-action focus:outline-none"
+          className="mt-1.5 block w-full resize-none rounded-[18px] border-2 border-line bg-surface px-3.5 py-2.5 text-[16px] leading-6 font-normal focus:border-action focus-visible:outline-offset-1"
         />
       </label>
       <Button type="submit" block disabled={!text.trim() || busy} aria-busy={busy}>

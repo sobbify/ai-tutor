@@ -90,7 +90,7 @@ export default function SettingsPage() {
                       min="07:00"
                       max="19:59"
                       onChange={(e) => e.target.value && save.mutate({ nudgeTime: e.target.value })}
-                      className="h-11 rounded-[14px] border-2 border-line bg-surface px-3 text-[16px] focus:border-action focus:outline-none"
+                      className="h-11 rounded-[14px] border-2 border-line bg-surface px-3 text-[16px] focus:border-action focus-visible:outline-offset-1"
                     />
                     {prefs.data.nudgeTime && (
                       <Button variant="ghost" size="md" onClick={() => save.mutate({ clearNudge: true })}>
@@ -107,7 +107,7 @@ export default function SettingsPage() {
                     id={hardestId}
                     value={prefs.data.hardestMomentId ?? ''}
                     onChange={(e) => save.mutate({ hardestMomentId: e.target.value })}
-                    className="mt-2 h-11 w-full rounded-[14px] border-2 border-line bg-surface px-3 text-[16px] focus:border-action focus:outline-none"
+                    className="mt-2 h-11 w-full rounded-[14px] border-2 border-line bg-surface px-3 text-[16px] focus:border-action focus-visible:outline-offset-1"
                   >
                     <option value="">{t.settings.none}</option>
                     {programme.map((m) => (

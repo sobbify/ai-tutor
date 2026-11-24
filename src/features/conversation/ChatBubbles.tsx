@@ -1,4 +1,4 @@
-import { memo, type ReactNode } from 'react';
+import { memo, useEffect, useRef, type ReactNode } from 'react';
 import { t } from '@/i18n';
 import { cn } from '@/lib/cn';
 import { changeAnchor, closestSentence, closestSpan, condenseDiff, diffWords } from '@/lib/wordDiff';
@@ -350,6 +350,12 @@ export const CorrectionCard = memo(function CorrectionCard({
   const { fix, positives, corrected } = reply.feedback;
   const slips = slipsOf(reply.feedback);
   const many = slips.length > 1;
+  // Keyboard and screen-reader users land on the feedback they just asked for (only when focus
+  // would otherwise be lost: the reply box or button that sent it has just gone).
+  const card = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (document.activeElement === document.body || document.activeElement === null) card.current?.focus({ preventScroll: true });
+  }, []);
   const lineActions = (text: string, key: string) => (
     <span className="flex shrink-0 flex-col gap-1.5">
       <SpeakerButton text={text} speechId={`fix:${reply.turnId}:${reply.attempt}:${key}`} size="sm" />
@@ -358,6 +364,8 @@ export const CorrectionCard = memo(function CorrectionCard({
   );
   return (
     <section
+      ref={card}
+      tabIndex={-1}
       aria-label={fix ? t.conversation.grammarFix : t.conversation.wellSaidTitle}
       className={cn('relative animate-rise overflow-hidden rounded-[22px] border-2 bg-surface px-4 pt-3 pb-3.5 shadow-card', fix ? 'border-action' : 'border-ok-dot')}
     >
