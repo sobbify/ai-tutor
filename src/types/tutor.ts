@@ -75,6 +75,15 @@ export const GrammarFixSchema = z.object({
 });
 export type GrammarFix = z.infer<typeof GrammarFixSchema>;
 
+/** Another slip in the same reply: one change, with its own rule and category. */
+export const SlipSchema = z.object({
+  wrong: z.string(),
+  better: z.string(),
+  tip: z.string().nullable().optional(),
+  category: z.string().nullable().optional(),
+});
+export type Slip = z.infer<typeof SlipSchema>;
+
 export const FeedbackSchema = z.object({
   heard: z.boolean(),
   positives: z.array(z.string()),
@@ -83,6 +92,10 @@ export const FeedbackSchema = z.object({
   tip: z.string().nullable().optional(),
   /** What kind of slip the fix is about: tense, agreement, article, preposition, … */
   category: z.string().nullable().optional(),
+  /** Every other slip in the reply, most important first (up to 3). */
+  moreFixes: z.array(SlipSchema).optional(),
+  /** Her whole reply with every slip fixed, when there are several. */
+  corrected: z.string().nullable().optional(),
 });
 export type Feedback = z.infer<typeof FeedbackSchema>;
 
@@ -154,6 +167,8 @@ export const PractiseItemSchema = z.object({
   fix: GrammarFixSchema,
   tip: z.string().nullable().optional(),
   category: z.string().nullable().optional(),
+  moreFixes: z.array(SlipSchema).optional(),
+  corrected: z.string().nullable().optional(),
 });
 export type PractiseItem = z.infer<typeof PractiseItemSchema>;
 
@@ -261,6 +276,9 @@ export const StorySchema = z.object({
   betterLine: z.string().nullable(),
   createdAt: z.string().nullable(),
   snowflakes: z.number().int().min(0).default(0),
+  category: z.string().nullable().optional(),
+  moreFixes: z.array(SlipSchema).optional(),
+  corrected: z.string().nullable().optional(),
 });
 export type Story = z.infer<typeof StorySchema>;
 

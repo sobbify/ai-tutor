@@ -83,12 +83,23 @@ class GrammarFix(Camel):
     better: str
 
 
+class Slip(Camel):
+    """One more grammar slip in the same reply, beyond the main `fix` (each about one change)."""
+
+    wrong: str
+    better: str
+    tip: str | None = None
+    category: str | None = None
+
+
 class Feedback(Camel):
     heard: bool
     positives: list[str]
-    fix: GrammarFix | None
+    fix: GrammarFix | None  # the most important slip
     tip: str | None = None  # one-line grammar micro-lesson with the fix
     category: str | None = None  # tense, agreement, article… (badge on the correction card)
+    more_fixes: list[Slip] = []  # other slips, most important first (up to 3)
+    corrected: str | None = None  # her whole reply with every slip fixed, when there are several
 
 
 class ReplyOut(Camel):
@@ -152,6 +163,8 @@ class PractiseItem(Camel):
     fix: GrammarFix
     tip: str | None = None
     category: str | None = None
+    more_fixes: list[Slip] = []
+    corrected: str | None = None
 
 
 class MomentRef(Camel):
@@ -292,6 +305,9 @@ class StoryOut(Camel):
     better_line: str | None
     created_at: datetime | None
     snowflakes: int = 0
+    category: str | None = None
+    more_fixes: list[Slip] = []
+    corrected: str | None = None
 
 
 class StoryIn(Camel):

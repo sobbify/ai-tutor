@@ -27,7 +27,7 @@ export function SnowflakeReward({ snowflakes }: { snowflakes: SnowflakesEarned }
   const shown = useCountUp(snowflakes.earned);
   if (snowflakes.earned <= 0) return null;
   return (
-    <section aria-labelledby="snowflake-reward" className="mt-3 animate-rise overflow-hidden rounded-[22px] border-2 border-[#7fd3ff] bg-surface [animation-delay:350ms]">
+    <section aria-labelledby="snowflake-reward" className="mt-3 animate-rise overflow-hidden rounded-[22px] border-2 border-[#7fd3ff] bg-surface">
       <h2 id="snowflake-reward" className="bg-[#126bc0] px-4 py-1.5 text-center text-[13px] font-extrabold tracking-[0.08em] text-white uppercase">
         {t.snowflakes.earnedLabel(snowflakes.earned)}
       </h2>

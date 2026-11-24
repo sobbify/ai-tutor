@@ -14,7 +14,19 @@ describe('evaluateReply (mock grammar check)', () => {
       fix: { wrong: 'settle', better: 'She will settle in quickly.' },
       tip: 'Use “will” for promises about later: “I will call you.”',
       category: 'tense',
+      moreFixes: [],
+      corrected: null,
     });
+  });
+
+  it('notices several slips at once, each with its own category, plus the whole reply fixed', () => {
+    const fb = evaluateReply(turn, 'Don’t worry, she settle quickly. She have many friends and he like the songs.', 'her');
+    expect(fb.category).toBe('tense');
+    expect(fb.moreFixes).toEqual([
+      { wrong: 'have', better: 'She has many friends and he like the songs.', tip: 'With he, she or it, add -s: “She likes”, “He has”.', category: 'agreement' },
+      { wrong: 'like', better: 'She have many friends and he likes the songs.', tip: 'With he, she or it, add -s: “She likes”, “He has”.', category: 'agreement' },
+    ]);
+    expect(fb.corrected).toBe('She will settle in quickly. She has many friends and he likes the songs.');
   });
 
   it('catches subject–verb agreement generically', () => {

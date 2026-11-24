@@ -177,6 +177,10 @@ class Reply(Base):
     signals: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)  # hidden assessment inputs
     typed: Mapped[bool] = mapped_column(Boolean, default=False)  # typing fallback (FR-16)
     category: Mapped[str | None] = mapped_column(String(24), nullable=True)  # kind of slip the fix is about
+    # Other slips in the same reply ([{wrong, better, tip, category}], most important first) and the
+    # whole reply with every slip fixed. The main slip stays in fix_* (progress counts that).
+    more_fixes: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list)
+    corrected: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     run: Mapped[Run] = relationship(back_populates="replies")
 
@@ -246,6 +250,9 @@ class Story(Base):
     typed: Mapped[bool] = mapped_column(Boolean, default=False)
     evaluator: Mapped[str] = mapped_column(String(20))
     created_at: Mapped[datetime] = mapped_column(TS, default=utcnow, index=True)
+    category: Mapped[str | None] = mapped_column(String(24), nullable=True)
+    more_fixes: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list)
+    corrected: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 
 class AppSetting(Base):

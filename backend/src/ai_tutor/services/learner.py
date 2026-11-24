@@ -44,7 +44,7 @@ from . import groups
 from . import programme as prog
 from . import snowflakes as sf
 from .content import published_moments
-from .journey import Journey
+from .journey import Journey, slips_of
 from .story import StoryResult
 
 # ---- home ---------------------------------------------------------------------------------------
@@ -193,6 +193,21 @@ async def allowed_source(db: AsyncSession, learner: Learner, text: str) -> str |
         .limit(1)
     ):
         return "story"
+    # The other slips and "All together" lines (JSON, so checked here; only replies with a fix have them).
+    replies = await db.execute(
+        select(Reply.more_fixes, Reply.corrected)
+        .join(Run)
+        .where(Run.learner_id == learner.id, Reply.fix_better.is_not(None))
+    )
+    for more, corrected in replies:
+        if text == corrected or any(m.better == text for m in slips_of(more)):
+            return "fix"
+    stories = await db.execute(
+        select(Story.more_fixes, Story.corrected).where(Story.learner_id == learner.id, Story.fix_better.is_not(None))
+    )
+    for more, corrected in stories:
+        if text == corrected or any(m.better == text for m in slips_of(more)):
+            return "story"
     return None
 
 
@@ -256,6 +271,9 @@ def story_out(s: Story) -> StoryOut:
         better_line=s.better_line,
         created_at=s.created_at,
         snowflakes=sf.STORY,
+        category=s.category if s.fix_better else None,
+        more_fixes=slips_of(s.more_fixes) if s.fix_better else [],
+        corrected=s.corrected if s.fix_better else None,
     )
 
 
@@ -274,6 +292,9 @@ async def save_story(
         fix_better=result.fix.better if result.fix else None,
         better_line=result.better_line,
         tip=result.tip,
+        category=result.category,
+        more_fixes=[m.model_dump() for m in result.more_fixes],
+        corrected=result.corrected,
         fillers=None if typed else result.fillers,
         typed=typed,
         evaluator=evaluator,

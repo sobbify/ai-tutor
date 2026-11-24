@@ -1,4 +1,4 @@
-import type { Feedback, GrammarFix } from '@/types/tutor';
+import type { Feedback, Slip } from '@/types/tutor';
 import type { MockTurn } from './content';
 
 /**
@@ -44,23 +44,44 @@ function capitalise(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-function genericFix(transcript: string): GrammarFix | null {
-  const dont = DONT.exec(transcript);
-  if (dont) {
-    const original = sentenceContaining(transcript, dont.index);
-    return {
-      wrong: dont[0].split(/\s+/).slice(1).join(' '),
-      better: capitalise(original.replace(DONT, (_m, subj: string) => `${subj} doesn’t`)),
-    };
+const TIPS = {
+  will: ['Use “will” for promises about later: “I will call you.”', 'tense'],
+  agreement: ['With he, she or it, add -s: “She likes”, “He has”.', 'agreement'],
+  other: ['Keep your sentence, change only the word that is wrong.', 'grammar'],
+} as const;
+
+/** A slip plus, when it's a word swap, exactly what to swap (for the "All together" line). */
+type Found = Slip & { swap?: [string, string] };
+
+/** Every agreement slip ("she have", "he don’t"), each fixed on its own in its sentence. */
+function agreementSlips(transcript: string): Found[] {
+  const out: Found[] = [];
+  const all = new RegExp(`${DONT.source}|${AGREEMENT.source}`, 'gi');
+  for (const m of transcript.matchAll(all)) {
+    const sentence = sentenceContaining(transcript, m.index);
+    const [tip, category] = TIPS.agreement;
+    if (DONT.test(m[0])) {
+      const fixed = m[0].replace(/don['’]t/i, 'doesn’t');
+      out.push({ wrong: m[0].split(/\s+/).slice(1).join(' '), better: capitalise(sentence.replace(m[0], fixed)), tip, category, swap: [m[0], fixed] });
+    } else {
+      const [subject = '', verb = ''] = m[0].split(/\s+/);
+      const fixed = `${subject} ${THIRD_PERSON[verb.toLowerCase()] ?? verb}`;
+      out.push({ wrong: verb, better: capitalise(sentence.replace(m[0], fixed)), tip, category, swap: [m[0], fixed] });
+    }
   }
-  const agreement = AGREEMENT.exec(transcript);
-  if (agreement) {
-    const [, subject = '', verb = ''] = agreement;
-    const original = sentenceContaining(transcript, agreement.index);
-    const corrected = original.replace(AGREEMENT, `${subject} ${THIRD_PERSON[verb.toLowerCase()] ?? verb}`);
-    return { wrong: verb, better: capitalise(corrected) };
+  return out;
+}
+
+/** Her whole reply with every slip fixed: scripted fixes replace their sentence, word swaps are
+ * applied in place (so two slips in one sentence both get fixed). */
+function together(transcript: string, slips: Found[]): string {
+  let text = transcript;
+  for (const slip of slips.filter((x) => !x.swap)) {
+    const at = text.toLowerCase().indexOf(slip.wrong.toLowerCase());
+    if (at >= 0) text = text.replace(sentenceContaining(text, at), slip.better);
   }
-  return null;
+  for (const slip of slips) if (slip.swap) text = text.replace(slip.swap[0], slip.swap[1]);
+  return text;
 }
 
 export function evaluateReply(turn: MockTurn, transcript: string, possessive: 'her' | 'his'): Feedback {
@@ -69,18 +90,27 @@ export function evaluateReply(turn: MockTurn, transcript: string, possessive: 'h
     return { heard: false, positives: [], fix: null, tip: null, category: null };
   }
 
-  const known = turn.knownFixes?.find((k) => k.pattern.test(clean));
-  const fix: GrammarFix | null = known ? { wrong: known.wrong, better: known.better } : genericFix(clean);
+  const slips: Found[] = (turn.knownFixes ?? [])
+    .filter((k) => k.pattern.test(clean))
+    .map((k) => {
+      const [tip, category] = /\bwill\b/i.test(k.better) && !/\bwill\b/i.test(clean) ? TIPS.will : TIPS.other;
+      return { wrong: k.wrong, better: k.better, tip, category };
+    });
+  for (const slip of agreementSlips(clean)) {
+    if (!slips.some((s) => s.wrong.toLowerCase().split(/\s+/).includes(slip.wrong.toLowerCase()))) slips.push(slip);
+  }
 
-  if (fix) {
-    const future = /\bwill\b/i.test(fix.better) && !/\bwill\b/i.test(clean);
-    const agreement = !known && (DONT.test(clean) || AGREEMENT.test(clean));
-    const [tip, category] = future
-      ? ['Use “will” for promises about later: “I will call you.”', 'tense']
-      : agreement
-        ? ['With he, she or it, add -s: “She likes”, “He has”.', 'agreement']
-        : ['Keep your sentence, change only the word that is wrong.', 'grammar'];
-    return { heard: true, positives: [`You answered ${possessive} question clearly`], fix, tip, category };
+  const [first, ...rest] = slips.slice(0, 4);
+  if (first) {
+    return {
+      heard: true,
+      positives: [`You answered ${possessive} question clearly`],
+      fix: { wrong: first.wrong, better: first.better },
+      tip: first.tip ?? null,
+      category: first.category ?? 'grammar',
+      moreFixes: rest.map((slip): Slip => ({ wrong: slip.wrong, better: slip.better, tip: slip.tip ?? null, category: slip.category ?? 'grammar' })),
+      corrected: rest.length ? together(clean, [first, ...rest]) : null,
+    };
   }
   return { heard: true, positives: ['You sounded warm and kind', 'No grammar mistakes. Well said!'], fix: null, tip: null, category: null };
 }

@@ -83,6 +83,8 @@ def test_not_heard_is_not_stored(learner: TestClient) -> None:
         "fix": None,
         "tip": None,
         "category": None,
+        "moreFixes": [],
+        "corrected": None,
     }
     assert learner.post("/api/tutor/moments/morning-greeting/advance", headers=CSRF).status_code == 409
 

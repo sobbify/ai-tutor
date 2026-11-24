@@ -23,6 +23,7 @@ from ..schemas import (
     ProgressOut,
     ReplyOut,
     RunOut,
+    Slip,
     SnowflakesEarned,
     SummaryOut,
     Trends,
@@ -49,6 +50,17 @@ class RunView:
         return a[0] if a else None
 
 
+def slips_of(raw: object) -> list[Slip]:
+    """Stored extra slips (JSON), skipping anything malformed."""
+    out: list[Slip] = []
+    for item in raw if isinstance(raw, list) else []:
+        try:
+            out.append(Slip.model_validate(item))
+        except ValueError:
+            continue
+    return out
+
+
 def reply_out(r: Reply) -> ReplyOut:
     fix = GrammarFix(wrong=r.fix_wrong or "", better=r.fix_better) if r.fix_better else None
     return ReplyOut(
@@ -57,7 +69,13 @@ def reply_out(r: Reply) -> ReplyOut:
         transcript=r.transcript,
         attempt=r.attempt,
         feedback=Feedback(
-            heard=True, positives=r.positives, fix=fix, tip=r.tip if fix else None, category=r.category if fix else None
+            heard=True,
+            positives=r.positives,
+            fix=fix,
+            tip=r.tip if fix else None,
+            category=r.category if fix else None,
+            more_fixes=slips_of(r.more_fixes) if fix else [],
+            corrected=r.corrected if fix else None,
         ),
         typed=r.typed,
     )
@@ -272,6 +290,8 @@ class Journey:
                             fix=GrammarFix(wrong=f.fix_wrong or "", better=f.fix_better),
                             tip=f.tip,
                             category=f.category,
+                            more_fixes=slips_of(f.more_fixes),
+                            corrected=f.corrected,
                         )
                     )
             return items
@@ -396,7 +416,13 @@ class Journey:
             transcript=result.transcript,
             attempt=attempt,
             feedback=Feedback(
-                heard=result.heard, positives=result.positives, fix=result.fix, tip=tip, category=category
+                heard=result.heard,
+                positives=result.positives,
+                fix=result.fix,
+                tip=tip,
+                category=category,
+                more_fixes=result.more_fixes if result.fix else [],
+                corrected=result.corrected if result.fix else None,
             ),
             typed=typed,
         )
@@ -413,6 +439,8 @@ class Journey:
             fix_better=result.fix.better if result.fix else None,
             tip=tip,
             category=category,
+            more_fixes=[m.model_dump() for m in result.more_fixes] if result.fix else [],
+            corrected=result.corrected if result.fix else None,
             fillers=None if typed else result.fillers,
             signals=result.signals(),
             typed=typed,

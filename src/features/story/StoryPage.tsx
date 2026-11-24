@@ -14,7 +14,8 @@ import { CheckIcon, KeyboardIcon, MicIcon, StopIcon, TrashIcon } from '@/compone
 import { Snowflake } from '@/components/ui/Snowflake';
 import { SaveLineButton } from '@/components/ui/SaveLineButton';
 import { SpeakerButton } from '@/components/ui/SpeakerButton';
-import { HighlightedText, SaidTry } from '@/features/conversation/ChatBubbles';
+import { CategoryBadge, HighlightedText, SlipList } from '@/features/conversation/ChatBubbles';
+import { slipsOf } from '@/lib/slips';
 
 type Phase = 'idle' | 'requesting' | 'listening' | 'checking' | 'result';
 
@@ -195,6 +196,7 @@ function TypedStory({ busy, onSend, onSpeak }: { busy: boolean; onSend: (text: s
 }
 
 function StoryResult({ story, onAgain }: { story: Story; onAgain: () => void }) {
+  const slips = slipsOf(story);
   if (!story.heard) {
     return (
       <div className="flex flex-col items-center gap-4 pt-6 text-center">
@@ -216,7 +218,7 @@ function StoryResult({ story, onAgain }: { story: Story; onAgain: () => void }) 
       <section className="rounded-card bg-sky px-4 py-3">
         <h2 className="text-[13px] font-bold tracking-wide text-action uppercase">{t.story.youSaid}</h2>
         <p className="mt-1 text-[15.5px] leading-6">
-          <HighlightedText text={story.transcript} phrase={story.fix?.wrong} />
+          <HighlightedText text={story.transcript} phrases={slips.map((x) => x.wrong)} />
         </p>
       </section>
       <ul className="space-y-2">
@@ -232,11 +234,19 @@ function StoryResult({ story, onAgain }: { story: Story; onAgain: () => void }) 
       {story.fix && (
         <section aria-label={t.conversation.grammarFix} className="rounded-[22px] border-2 border-action bg-surface px-4 pt-3 pb-3.5">
           <div className="flex items-center justify-between gap-2">
-            <h2 className="text-[14px] font-extrabold text-action">{t.conversation.grammarFix}</h2>
-            <SpeakerButton text={story.fix.better} speechId={`story-fix:${story.id ?? 0}`} />
+            <span className="flex items-center gap-2">
+              <h2 className="text-[14px] font-extrabold text-action">{slips.length > 1 ? t.conversation.grammarFixes(slips.length) : t.conversation.grammarFix}</h2>
+              {slips.length === 1 && <CategoryBadge category={slips[0]?.category} />}
+            </span>
+            {slips.length === 1 && <SpeakerButton text={story.fix.better} speechId={`story-fix:${story.id ?? 0}`} />}
           </div>
           <div className="mt-1.5 rounded-[16px] bg-mist px-3 py-2.5">
-            <SaidTry transcript={story.transcript} fix={story.fix} tip={story.tip} />
+            <SlipList
+              transcript={story.transcript}
+              slips={slips}
+              corrected={story.corrected}
+              actions={slips.length > 1 ? (text, key) => <SpeakerButton text={text} speechId={`story-fix:${story.id ?? 0}:${key}`} size="sm" /> : undefined}
+            />
           </div>
         </section>
       )}

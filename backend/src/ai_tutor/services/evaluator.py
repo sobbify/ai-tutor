@@ -15,7 +15,7 @@ from typing import Any, Protocol
 from pydantic import BaseModel
 
 from ..logs import log
-from ..schemas import GrammarFix
+from ..schemas import GrammarFix, Slip
 from .keys import KeyPool, model_list
 
 
@@ -72,6 +72,10 @@ class Evaluation(BaseModel):
     tip: str | None = None
     # One of CATEGORIES, when there is a fix
     category: str | None = None
+    # Other slips in the reply, most important first (each changes one thing), and the whole reply
+    # with every slip fixed when there is more than one
+    more_fixes: list[Slip] = []
+    corrected: str | None = None
     # Private signals for the hidden assessment (PRD §09) — never shown as scores
     fillers: int | None = None  # ums, uhs, "like" used as a filler
     answered: bool | None = None  # listening: did the reply answer what the parent said?
@@ -84,6 +88,77 @@ class Evaluation(BaseModel):
             for k, v in (("answered", self.answered), ("polite", self.polite), ("intelligible", self.intelligible))
             if v is not None
         }
+
+
+MAX_SLIPS = 4  # per reply: enough to see the pattern, few enough not to feel like an exam
+
+
+def _key(text: str) -> str:
+    return " ".join(re.sub(r"[^\w\s']", " ", text.lower()).split())
+
+
+_SENTENCE = re.compile(r"(?<=[.!?])\s+")
+
+
+def focus(better: str, transcript: str) -> str:
+    """Only the sentence(s) of `better` that she didn't already say. Models sometimes return her
+    whole reply as the fix; the card should show just the sentence that changed."""
+    said = {_key(x) for x in _SENTENCE.split(transcript) if x.strip()}
+    parts = [x for x in _SENTENCE.split(better.strip()) if x.strip()]
+    if len(parts) < 2:
+        return better.strip()
+    changed = [x for x in parts if _key(x) not in said]
+    return " ".join(changed) if changed else better.strip()
+
+
+def tidy_slips(
+    fix: GrammarFix | None,
+    tip: str | None,
+    category: str | None,
+    more: list[Slip],
+    corrected: str | None,
+    transcript: str = "",
+) -> tuple[GrammarFix | None, str | None, str | None, list[Slip], str | None]:
+    """Clean what the model reported: categories mapped, empties and repeats dropped, each fix cut
+    to the sentence that changed, at most MAX_SLIPS in all, and `corrected` only when it adds
+    something (several slips)."""
+    slips: list[Slip] = []
+    if fix and fix.better.strip():
+        slips.append(Slip(wrong=fix.wrong, better=fix.better, tip=tip, category=category))
+    slips += [m for m in more if m.better.strip()]
+    if not slips:
+        return None, None, None, [], None
+    seen: set[str] = set()
+    unique: list[Slip] = []
+    for slip in slips:
+        key = _key(slip.wrong) or _key(slip.better)
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append(
+            Slip(
+                wrong=slip.wrong.strip()[:200],
+                better=(focus(slip.better, transcript) if transcript else slip.better.strip())[:400],
+                tip=(slip.tip or "").strip()[:200] or None,
+                category=clean_category(slip.category) or "grammar",
+            )
+        )
+    first, rest = unique[0], unique[1:MAX_SLIPS]
+    together = (corrected or "").strip()[:800] or None
+    if not rest or (together and _key(together) == _key(first.better)):
+        together = None
+    return GrammarFix(wrong=first.wrong, better=first.better), first.tip, first.category, rest, together
+
+
+def tidy(result: Evaluation) -> Evaluation:
+    if not result.heard:
+        return Evaluation(heard=False, transcript=result.transcript, positives=[], fix=None)
+    fix, tip, category, more, corrected = tidy_slips(
+        result.fix, result.tip, result.category, result.more_fixes, result.corrected, result.transcript
+    )
+    return result.model_copy(
+        update={"fix": fix, "tip": tip, "category": category, "more_fixes": more, "corrected": corrected}
+    )
 
 
 class EvaluationUnavailable(RuntimeError):
@@ -109,22 +184,27 @@ examiner. The teacher is role-playing a short conversation with a parent and has
 3. Respect the Indian English she uses with parents. These are correct; never fix them:
    "ma'am", "sir", "kindly", "today itself", "do one thing", "she is having a cold", short spoken
    answers without a full sentence ("At ten o'clock, ma'am."), numbers said as digits or words.
-4. If there is a real grammar mistake (tense, he/she agreement, a missing a/the, a wrong preposition,
-   plural, word order in a question, pronoun, "more better", "discuss about", a verb form), report
-   only the most important one:
-   - fix.wrong: the exact wrong word or short phrase, copied from the transcript
-   - fix.better: the WHOLE sentence that had the mistake, with the smallest change that makes it
-     correct (fix any other slip in that same sentence too). Keep her words, her order and her
-     meaning. It must be a complete sentence she can say aloud — never a fragment like "She doesn't".
-     If her reply has several sentences, give only the one with the mistake.
+4. Find EVERY real grammar mistake (tense, he/she agreement, a missing a/the, a wrong preposition,
+   plural, word order in a question, pronoun, "more better", "discuss about", a verb form) — up to 4,
+   most important first. Report the first as fix/tip/category and the others in more_fixes, each
+   with the same fields (wrong, better, tip, category). For EACH mistake:
+   - wrong: the exact wrong word or short phrase, copied from the transcript
+   - better: the WHOLE sentence that had this mistake, changing ONLY this mistake, so she sees one
+     change at a time. Keep her words, her order and her meaning. It must be a complete sentence
+     she can say aloud — never a fragment like "She doesn't". If her reply has several sentences,
+     give only the one with this mistake.
    - tip: the rule behind it in one short line (under 16 words), with a tiny example, e.g.
      "Use 'will' for promises about later: 'I will call you.'"
    - category: one of tense, agreement, article, preposition, word-order, plural, pronoun,
      word-choice, grammar
-   - one positive about how she answered (e.g. "You answered her question clearly").
+   Report each mistake once; never report style preferences or the Indian English in rule 3.
+   If there are two or more mistakes, set corrected to her whole reply with every mistake fixed
+   (her words, smallest changes); otherwise corrected=null.
+   Give one positive about how she answered (e.g. "You answered her question clearly").
    If she used Hindi or another language, fix.better is her sentence in simple English and the tip is
    "Here is how to say it in English." Never tell her off.
-5. If there is no grammar mistake, set fix=null, tip=null, category=null and give exactly two positives:
+5. If there is no grammar mistake, set fix=null, tip=null, category=null, more_fixes=[],
+   corrected=null and give exactly two positives:
    one short, specific line about her tone or content (e.g. "You reassured her about lunch") and
    "No grammar mistakes. Well said!".
 6. Private signals (never shown to her as scores):
@@ -206,11 +286,7 @@ class GeminiEvaluator:
                 except ValueError:
                     log.warning("gemini_eval_bad_shape", key=cand.label, model=model)
                     continue
-                if not result.heard:
-                    return Evaluation(heard=False, transcript=result.transcript, positives=[], fix=None)
-                if not result.fix:
-                    return result.model_copy(update={"tip": None, "category": None})
-                return result.model_copy(update={"category": clean_category(result.category) or "grammar"})
+                return tidy(result)
         raise EvaluationUnavailable("every Gemini key failed")
 
 
@@ -242,30 +318,41 @@ class RuleBasedEvaluator:
         if len(_FILLER.sub("", transcript).split()) < 2:
             return Evaluation(heard=False, transcript=transcript, positives=[], fix=None)
         signals = {"fillers": fillers, "answered": True, "polite": True, "intelligible": True}
-        fix = next(
-            (
-                GrammarFix(wrong=k["wrong"], better=k["better"])
-                for k in ctx.known_fixes
-                if re.search(k["pattern"], transcript, re.IGNORECASE)
-            ),
-            None,
-        )
-        tip, category = RULE_TIPS["default"], "grammar"
-        if fix is not None and re.search(r"\bwill\b", fix.better, re.IGNORECASE):
-            tip, category = RULE_TIPS["will"], "tense"
-        if fix is None and (m := _AGREEMENT.search(transcript)):
-            better = _AGREEMENT.sub(lambda x: f"{x.group(1)} {_THIRD_PERSON[x.group(2).lower()]}", transcript)
-            fix = GrammarFix(wrong=m.group(2), better=better)
-            tip, category = RULE_TIPS["agreement"], "agreement"
-        if fix:
-            return Evaluation(
-                heard=True,
-                transcript=transcript,
-                positives=[f"You answered {ctx.possessive} question clearly"],
-                fix=fix,
-                tip=tip,
-                category=category,
-                **signals,
+        slips: list[Slip] = []
+        for k in ctx.known_fixes:
+            if re.search(k["pattern"], transcript, re.IGNORECASE):
+                will = re.search(r"\bwill\b", k["better"], re.IGNORECASE) is not None
+                slips.append(
+                    Slip(
+                        wrong=k["wrong"],
+                        better=k["better"],
+                        tip=RULE_TIPS["will"] if will else RULE_TIPS["default"],
+                        category="tense" if will else "grammar",
+                    )
+                )
+        for m in _AGREEMENT.finditer(transcript):
+            fixed = f"{m.group(1)} {_THIRD_PERSON[m.group(2).lower()]}"
+            sentence = _sentence_at(transcript, m.start())
+            better = sentence.replace(m.group(0), fixed, 1)
+            if not any(m.group(2).lower() in s.wrong.lower().split() for s in slips):
+                slips.append(Slip(wrong=m.group(2), better=better, tip=RULE_TIPS["agreement"], category="agreement"))
+        if slips:
+            first = slips[0]
+            corrected = transcript
+            for slip in slips:  # every slip fixed, for the "All together" line
+                corrected = _apply(corrected, slip)
+            return tidy(
+                Evaluation(
+                    heard=True,
+                    transcript=transcript,
+                    positives=[f"You answered {ctx.possessive} question clearly"],
+                    fix=GrammarFix(wrong=first.wrong, better=first.better),
+                    tip=first.tip,
+                    category=first.category,
+                    more_fixes=slips[1:],
+                    corrected=corrected if len(slips) > 1 else None,
+                    **signals,
+                )
             )
         return Evaluation(
             heard=True,
@@ -274,3 +361,23 @@ class RuleBasedEvaluator:
             fix=None,
             **signals,
         )
+
+
+def _sentence_at(text: str, index: int) -> str:
+    """The sentence of `text` that contains character `index`."""
+    start = max(text.rfind(c, 0, index) for c in ".!?") + 1
+    ends = [e for e in (text.find(c, index) for c in ".!?") if e != -1]
+    end = min(ends) + 1 if ends else len(text)
+    return text[start:end].strip()
+
+
+def _apply(text: str, slip: Slip) -> str:
+    """Put one rule fix into the whole reply (rules evaluator only): swap the wrong phrase for
+    what replaces it in `better`, when that can be found; otherwise leave the text."""
+    wrong = slip.wrong.strip()
+    if not wrong or wrong.lower() not in text.lower():
+        return text
+    sentence = next((s for s in re.split(r"(?<=[.!?])\s+", text) if wrong.lower() in s.lower()), "")
+    if not sentence:
+        return text
+    return text.replace(sentence, slip.better.strip(), 1)

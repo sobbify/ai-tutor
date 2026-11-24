@@ -2,7 +2,9 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 
 async function expectAccessible(page: Page) {
-  // Let entrance animations finish first: half-faded text would read as low contrast.
+  // Let entrance animations finish first: half-faded text would read as low contrast. A short
+  // settle first, so cards that mount a moment after the page (rewards, toasts) are counted too.
+  await page.waitForTimeout(300);
   await page
     .waitForFunction(
       `document.getAnimations().every((a) => {
@@ -96,6 +98,15 @@ test('story, rehearse, certificate and settings screens are accessible', async (
   await expect(page.getByRole('heading', { name: 'Next Time, You Could Say' })).toBeVisible();
   await expectAccessible(page);
 
+  // Several slips at once, sorted by kind, with the whole reply fixed at the end.
+  await page.goto('/moments/pickup-update');
+  await page.getByRole('button', { name: 'Type instead' }).click();
+  await page.getByRole('textbox', { name: 'Type your reply' }).fill('Yes ma’am, she have her bag. He like the new teacher.');
+  await page.getByRole('button', { name: 'Send', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '2 Grammar Fixes' })).toBeVisible();
+  await expect(page.getByText('All together')).toBeVisible();
+  await expectAccessible(page);
+
   await page.goto('/rehearse');
   await expect(page.getByRole('heading', { name: 'Programme moments' })).toBeVisible();
   await expectAccessible(page);
@@ -150,6 +161,13 @@ test.describe('dark appearance', () => {
     await page.getByRole('button', { name: 'Start the Role-play' }).click();
     await replyOnce(page);
     await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
+    await expectAccessible(page);
+
+    await page.goto('/moments/pickup-update');
+    await page.getByRole('button', { name: 'Type instead' }).click();
+    await page.getByRole('textbox', { name: 'Type your reply' }).fill('Yes ma’am, she have her bag. He like the new teacher.');
+    await page.getByRole('button', { name: 'Send', exact: true }).click();
+    await expect(page.getByRole('heading', { name: '2 Grammar Fixes' })).toBeVisible();
     await expectAccessible(page);
 
     for (const path of ['/practise', '/me', '/group', '/progress', '/phrasebook', '/rehearse', '/certificate', '/settings']) {

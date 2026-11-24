@@ -2,6 +2,7 @@ import { memo, type ReactNode } from 'react';
 import { t } from '@/i18n';
 import { cn } from '@/lib/cn';
 import { closestSentence, closestSpan, diffWords } from '@/lib/wordDiff';
+import { groupSlips, slipsOf, type SlipView } from '@/lib/slips';
 import type { Character, GrammarFix, Reply } from '@/types/tutor';
 import { CheckIcon } from '@/components/ui/Icons';
 import { SaveLineButton } from '@/components/ui/SaveLineButton';
@@ -11,21 +12,95 @@ import { Face } from './Portrait';
 /** The slip inside her words: red, wavy-underlined, on a soft red wash (the colour isn't the only cue). */
 const SLIP = 'rounded-[4px] bg-danger-wash px-0.5 text-danger-ink underline decoration-wavy decoration-[1.5px] underline-offset-[4px]';
 
-/** Marks the first occurrence of `phrase` (the grammar slip) inside `text`. */
-export function HighlightedText({ text, phrase }: { text: string; phrase: string | null | undefined }) {
-  if (!phrase) return <>{text}</>;
-  const at = text.toLowerCase().indexOf(phrase.toLowerCase());
-  if (at < 0) return <>{text}</>;
-  return (
-    <>
-      {text.slice(0, at)}
-      <mark className={SLIP}>
+/** Marks the first occurrence of each slip (`phrase`, or every one in `phrases`) inside `text`. */
+export function HighlightedText({ text, phrase, phrases }: { text: string; phrase?: string | null; phrases?: string[] }) {
+  const wanted = (phrases ?? (phrase ? [phrase] : [])).filter(Boolean);
+  // Find each slip's first match, then keep the ones that don't overlap, left to right.
+  const spans = wanted
+    .map((p) => ({ at: text.toLowerCase().indexOf(p.toLowerCase()), len: p.length }))
+    .filter((x) => x.at >= 0)
+    .sort((a, b) => a.at - b.at)
+    .filter((x, i, all) => i === 0 || x.at >= (all[i - 1]?.at ?? 0) + (all[i - 1]?.len ?? 0));
+  if (!spans.length) return <>{text}</>;
+  const out: ReactNode[] = [];
+  let from = 0;
+  spans.forEach(({ at, len }, i) => {
+    out.push(text.slice(from, at));
+    out.push(
+      <mark key={i} className={SLIP}>
         <span className="sr-only">(mistake: </span>
-        {text.slice(at, at + phrase.length)}
+        {text.slice(at, at + len)}
         <span className="sr-only">)</span>
-      </mark>
-      {text.slice(at + phrase.length)}
-    </>
+      </mark>,
+    );
+    from = at + len;
+  });
+  out.push(text.slice(from));
+  return <>{out}</>;
+}
+
+/**
+ * Every slip in a reply, sorted into its category (Tense, A / an / the, …): one "You said → Try"
+ * per slip, each changing one thing, then the whole reply with every fix when there are several.
+ * `actions` adds buttons (listen, save) beside a corrected line.
+ */
+export function SlipList({
+  transcript,
+  slips,
+  corrected,
+  compact = false,
+  actions,
+}: {
+  transcript: string;
+  slips: SlipView[];
+  corrected?: string | null;
+  compact?: boolean;
+  actions?: (text: string, key: string) => ReactNode;
+}) {
+  if (slips.length === 0) return null;
+  if (slips.length === 1 && slips[0]) {
+    const only = slips[0];
+    return (
+      <div className="flex items-start gap-2">
+        <div className="min-w-0 flex-1">
+          <SaidTry transcript={transcript} fix={only} tip={only.tip} compact={compact} />
+        </div>
+        {actions?.(only.better, 'slip-0')}
+      </div>
+    );
+  }
+  let n = 0;
+  return (
+    <div className={cn('flex flex-col', compact ? 'gap-2.5' : 'gap-3')}>
+      {groupSlips(slips).map((group) => (
+        <section key={group.category} aria-label={t.conversation.categories[group.category] ?? group.category} className="flex flex-col gap-2">
+          <p className="flex items-center gap-1.5">
+            <CategoryBadge category={group.category} />
+            {group.slips.length > 1 && <span className="text-[12px] font-extrabold text-ink-2">× {group.slips.length}</span>}
+          </p>
+          {group.slips.map((slip) => {
+            const key = `slip-${n++}`;
+            return (
+              <div key={key} className="flex items-start gap-2 border-l-[3px] border-[#c8285e]/40 pl-2.5">
+                <div className="min-w-0 flex-1">
+                  <SaidTry transcript={transcript} fix={slip} tip={slip.tip} compact />
+                </div>
+                {actions?.(slip.better, key)}
+              </div>
+            );
+          })}
+        </section>
+      ))}
+      {corrected && (
+        <div className="rounded-[14px] border-2 border-ok-dot/60 bg-ok-bg/60 px-3 py-2">
+          <p className="text-[11.5px] font-extrabold tracking-wide text-ok uppercase">{t.conversation.allTogether}</p>
+          <div className="mt-0.5 flex items-start gap-2">
+            <p className={cn('min-w-0 flex-1 leading-snug font-bold text-ink', compact ? 'text-[15px]' : 'text-[16.5px]')}>{corrected}</p>
+            {actions?.(corrected, 'together')}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -134,20 +209,20 @@ export const UserBubble = memo(function UserBubble({
   showCorrection?: boolean;
   children?: ReactNode;
 }) {
-  const { fix, tip, category } = reply.feedback;
+  const slips = slipsOf(reply.feedback);
   return (
     <li className="flex animate-rise flex-col items-end gap-1.5 pl-10">
       <div className="max-w-full rounded-[22px] rounded-br-md border-2 border-action bg-surface px-3.5 py-2.5">
         <p className="text-[15.5px] leading-[23px]">
           <span className="sr-only">{t.conversation.you}: </span>
-          <HighlightedText text={reply.transcript} phrase={fix?.wrong} />
+          <HighlightedText text={reply.transcript} phrases={slips.map((s) => s.wrong)} />
         </p>
       </div>
-      {!showCorrection ? null : fix ? (
+      {!showCorrection ? null : slips.length ? (
         <div className="w-full rounded-[18px] border-2 border-action/70 bg-surface px-3.5 py-2.5">
-          <CategoryBadge category={category} />
+          {slips.length === 1 ? <CategoryBadge category={slips[0]?.category} /> : <p className="text-[13px] font-extrabold text-action">{t.conversation.slipCount(slips.length)}</p>}
           <div className="mt-1.5">
-            <SaidTry transcript={reply.transcript} fix={fix} tip={tip} compact />
+            <SlipList transcript={reply.transcript} slips={slips} corrected={reply.feedback.corrected} compact />
           </div>
           {children}
         </div>
@@ -197,7 +272,15 @@ export const CorrectionCard = memo(function CorrectionCard({
   onDismiss: () => void;
   onRetry: () => void;
 }) {
-  const { fix, positives, tip, category } = reply.feedback;
+  const { fix, positives, corrected } = reply.feedback;
+  const slips = slipsOf(reply.feedback);
+  const many = slips.length > 1;
+  const lineActions = (text: string, key: string) => (
+    <span className="flex shrink-0 flex-col gap-1.5">
+      <SpeakerButton text={text} speechId={`fix:${reply.turnId}:${reply.attempt}:${key}`} size="sm" />
+      <SaveLineButton text={text} momentId={momentId} size="sm" />
+    </span>
+  );
   return (
     <section
       aria-label={fix ? t.conversation.grammarFix : t.conversation.wellSaidTitle}
@@ -207,8 +290,8 @@ export const CorrectionCard = memo(function CorrectionCard({
         <div className="flex min-w-0 items-center gap-2">
           {fix ? (
             <>
-              <h3 className="text-[14px] font-extrabold text-action">{t.conversation.grammarFix}</h3>
-              <CategoryBadge category={category} />
+              <h3 className="text-[14px] font-extrabold text-action">{many ? t.conversation.grammarFixes(slips.length) : t.conversation.grammarFix}</h3>
+              {!many && <CategoryBadge category={slips[0]?.category} />}
             </>
           ) : (
             <h3 className="flex items-center gap-1.5 text-[15px] font-extrabold text-ok">
@@ -242,8 +325,8 @@ export const CorrectionCard = memo(function CorrectionCard({
 
       {fix && (
         <>
-          <div className="mt-2.5 rounded-[16px] bg-mist px-3 py-2.5">
-            <SaidTry transcript={reply.transcript} fix={fix} tip={tip} />
+          <div className={cn('mt-2.5 rounded-[16px] bg-mist px-3 py-2.5', many && 'max-h-[42vh] overflow-y-auto overscroll-contain')} tabIndex={many ? 0 : undefined} aria-label={many ? t.conversation.slipCount(slips.length) : undefined} role={many ? 'group' : undefined}>
+            <SlipList transcript={reply.transcript} slips={slips} corrected={corrected} actions={many ? lineActions : undefined} />
           </div>
           <div className="mt-2.5 flex items-center gap-2">
             <button
@@ -256,10 +339,12 @@ export const CorrectionCard = memo(function CorrectionCard({
               </svg>
               {t.conversation.sayItAgain}
             </button>
-            <span className="ml-auto flex gap-1.5">
-              <SpeakerButton text={fix.better} speechId={`fix:${reply.turnId}:${reply.attempt}`} />
-              <SaveLineButton text={fix.better} momentId={momentId} />
-            </span>
+            {!many && (
+              <span className="ml-auto flex gap-1.5">
+                <SpeakerButton text={fix.better} speechId={`fix:${reply.turnId}:${reply.attempt}`} />
+                <SaveLineButton text={fix.better} momentId={momentId} />
+              </span>
+            )}
           </div>
         </>
       )}

@@ -19,9 +19,9 @@ from dataclasses import dataclass
 from typing import Any, Protocol
 
 from ..logs import log
-from ..schemas import GrammarFix
+from ..schemas import GrammarFix, Slip
 from .audio import LISTEN_RATE
-from .evaluator import SYSTEM_PROMPT, Evaluation, LineContext, clean_category, line_prompt
+from .evaluator import SYSTEM_PROMPT, Evaluation, LineContext, line_prompt, tidy
 from .keys import KeyPool
 from .story import STORY_PROMPT, StoryResult, clean
 
@@ -84,6 +84,24 @@ def _positives(args: dict[str, Any], most: int) -> list[str]:
     return [str(p).strip()[:120] for p in raw if str(p).strip()][:most] if isinstance(raw, list) else []
 
 
+def _slips(args: dict[str, Any]) -> list[Slip]:
+    raw = args.get("more_fixes") or []
+    if not isinstance(raw, list):
+        return []
+    out = []
+    for item in raw[:6]:
+        if isinstance(item, dict) and str(item.get("better") or "").strip():
+            out.append(
+                Slip(
+                    wrong=_text(item, "wrong", 200),
+                    better=_text(item, "better", 400),
+                    tip=_text(item, "tip", 200) or None,
+                    category=_text(item, "category", 40) or None,
+                )
+            )
+    return out
+
+
 def evaluation_from_args(args: dict[str, Any]) -> Evaluation | None:
     """Validate the model's tool-call arguments (never trust their shape)."""
     try:
@@ -97,17 +115,21 @@ def evaluation_from_args(args: dict[str, Any]) -> Evaluation | None:
         return Evaluation(heard=False, transcript=transcript, positives=[], fix=None)
     if not positives:
         return None
-    return Evaluation(
-        heard=True,
-        transcript=transcript,
-        positives=positives,
-        fix=GrammarFix(wrong=wrong, better=better) if better else None,
-        tip=(_text(args, "tip", 200) or None) if better else None,
-        category=(clean_category(args.get("category")) or "grammar") if better else None,
-        fillers=_count(args, "fillers"),
-        answered=_flag(args, "answered"),
-        polite=_flag(args, "polite"),
-        intelligible=_flag(args, "intelligible"),
+    return tidy(
+        Evaluation(
+            heard=True,
+            transcript=transcript,
+            positives=positives,
+            fix=GrammarFix(wrong=wrong, better=better) if better else None,
+            tip=(_text(args, "tip", 200) or None) if better else None,
+            category=_text(args, "category", 40) or None,
+            more_fixes=_slips(args),
+            corrected=_text(args, "corrected", 800) or None,
+            fillers=_count(args, "fillers"),
+            answered=_flag(args, "answered"),
+            polite=_flag(args, "polite"),
+            intelligible=_flag(args, "intelligible"),
+        )
     )
 
 
@@ -120,6 +142,9 @@ def story_from_args(args: dict[str, Any]) -> StoryResult | None:
             positives=_positives(args, 2),
             fix=GrammarFix(wrong=_text(args, "fix_wrong", 200), better=better) if better else None,
             tip=_text(args, "tip", 200) or None,
+            category=_text(args, "category", 40) or None,
+            more_fixes=_slips(args),
+            corrected=_text(args, "corrected", 800) or None,
             better_line=_text(args, "better_line", 300) or None,
             fillers=_count(args, "fillers"),
         )
@@ -161,6 +186,8 @@ _COMMON = {
     "fix_better": ("STRING", "The whole sentence with the mistake, minimally corrected (never a fragment), or empty"),
     "tip": ("STRING", "The grammar rule in under 16 words with a tiny example, or empty"),
     "category": ("STRING", "tense, agreement, article, preposition, word-order, plural, pronoun, word-choice, grammar"),
+    "more_fixes": ("SLIPS", "Every other mistake, most important first (up to 3); empty if none"),
+    "corrected": ("STRING", "With two or more mistakes: her whole reply with every mistake fixed; else empty"),
     "fillers": ("INTEGER", "How many filler sounds/words (um, uh, er, hmm)"),
 }
 
@@ -202,6 +229,18 @@ def _tool(spec: LiveSpec) -> Any:
     from google.genai import types
 
     def schema(kind: str, description: str) -> Any:
+        if kind == "SLIPS":
+            slip = types.Schema(
+                type=types.Type.OBJECT,
+                properties={
+                    "wrong": types.Schema(type=types.Type.STRING, description="The wrong word or phrase"),
+                    "better": types.Schema(type=types.Type.STRING, description="Her sentence with only this fixed"),
+                    "tip": types.Schema(type=types.Type.STRING, description="The rule in under 16 words"),
+                    "category": types.Schema(type=types.Type.STRING, description="One of the categories"),
+                },
+                required=["wrong", "better", "tip", "category"],
+            )
+            return types.Schema(type=types.Type.ARRAY, items=slip, description=description)
         t = getattr(types.Type, kind)
         if kind == "ARRAY":
             return types.Schema(type=t, items=types.Schema(type=types.Type.STRING), description=description)

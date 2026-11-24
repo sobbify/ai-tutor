@@ -16,6 +16,11 @@ Decisions taken with the product owner for this stage:
   (FR-28). Anonymous cross-centre games (FR-29) and AI-led group role-plays (FR-27) are not built.
   Note: the member list is ordered by snowflakes this week, which is close to the leaderboard the
   PRD rules out for *levels* (§09); snowflakes measure practice, not ability.
+- **Several slips at once (2026-11-24, product owner).** Instead of the PRD's one fix per turn
+  (FR-11), ELSA names every slip in a reply — up to 4, most important first. Each has its own
+  category and a correction that changes only that slip, so the card shows one change at a time,
+  grouped by kind (Tense, A / an / the, …), with "All together" (the whole reply corrected) at the
+  end. Still no marks or scores. Progress still counts a reply as right only when it had no slip.
 - Scripts are **drafts for academic-team review** — editable in the admin console (`/admin/content`).
 
 ## Requirement checklist
@@ -32,7 +37,7 @@ Decisions taken with the product owner for this stage:
 | 8 | Hear → learn → speak again | P0 | ✅ | Learn step (hear + save phrases, tip) → role-play → "Say It Again" |
 | 9 | Meaning side by side | P0 | ⏸ English only (decision) | — |
 | 10 | "Say it my way" | P0 | ◑ | Fixes keep her words; translation from her language comes with FR-3 |
-| 11 | One fix per turn, no marks | P0 | ✅ | One grammar fix, kind positives, no scores |
+| 11 | One fix per turn, no marks | P0 | ⚠ changed (decision 2026-11-24) | Every slip in a reply (up to 4), each with its own one-change fix, grouped by kind, then the whole reply corrected. Still no marks or scores |
 | 12 | Grammar and sentence micro-lessons | P0 | ✅ | One-line tip with every fix; lesson tip per moment |
 | 13 | Filler words tracked privately | P0 | ✅ | Counted per reply (Gemini), shown only as a gentle trend |
 | 14 | Never judges accent | P0 | ✅ | Prompts: grammar only, intelligibility never accent; "Could you say it again?" |

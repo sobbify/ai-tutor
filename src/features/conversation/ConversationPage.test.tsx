@@ -152,6 +152,32 @@ describe('Conversation', () => {
     expect(await screen.findByRole('button', { name: 'Saved in your phrasebook: She will settle in quickly.' })).toHaveAttribute('aria-pressed', 'true');
   });
 
+  it('notices several slips at once and sorts them by category', async () => {
+    const user = userEvent.setup();
+    renderRoute('/moments/morning-greeting');
+    await user.click(await screen.findByRole('button', { name: 'Type instead' }));
+    await user.type(
+      screen.getByRole('textbox', { name: 'Type your reply' }),
+      'Don’t worry, she settle quickly. She have many friends and he like the songs.',
+    );
+    await user.click(screen.getByRole('button', { name: 'Send' }));
+    expect(await screen.findByRole('heading', { name: '3 Grammar Fixes' })).toBeInTheDocument();
+    const card = screen.getByRole('region', { name: 'Grammar Fix' });
+    // One group per kind of slip, each slip with its own one-change fix.
+    const tense = within(card).getByRole('region', { name: 'Tense' });
+    expect(tense).toHaveTextContent(/Try\s+She will settle in quickly\./);
+    const agreement = within(card).getByRole('region', { name: 'He / she + verb' });
+    expect(agreement).toHaveTextContent('× 2');
+    expect(agreement).toHaveTextContent(/Try\s+She has many friends and he like the songs\./);
+    expect(agreement).toHaveTextContent(/Try\s+She have many friends and he likes the songs\./);
+    // Then her whole reply with every fix, which she can hear and save too.
+    expect(card).toHaveTextContent(/All together\s*She will settle in quickly\. She has many friends and he likes the songs\./);
+    expect(within(card).getByRole('button', { name: /Save to phrasebook: She will settle in quickly\. She has/ })).toBeInTheDocument();
+    // Every slip is marked in her own words in the chat.
+    const marks = screen.getByRole('list', { name: 'Conversation so far' }).querySelectorAll('mark');
+    expect([...marks].map((m) => m.textContent)).toEqual(['(mistake: settle)', '(mistake: have)', '(mistake: like)']);
+  });
+
   it('the first chat never shows marks and returns home at the end', async () => {
     const user = userEvent.setup();
     const { router } = renderRoute('/moments/hello-elsa');

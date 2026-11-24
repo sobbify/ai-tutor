@@ -263,6 +263,8 @@ def test_socket_uses_gemini_live_result(settings: Settings) -> None:
             "fix": None,
             "tip": None,
             "category": None,
+            "moreFixes": [],
+            "corrected": None,
         }
         assert (
             listener.specs[0].tool_name == "give_feedback"

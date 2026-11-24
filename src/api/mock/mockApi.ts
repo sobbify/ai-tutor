@@ -541,14 +541,29 @@ export function createMockApi({ storage = safeStorage(), latencyMs = 350, onboar
       if (clean.split(/\s+/).length < 3) {
         return wait({ id: null, heard: false, transcript: '', positives: [], fix: null, tip: null, betterLine: null, createdAt: null, snowflakes: 0 });
       }
-      const agreement = /\b(he|she) (eat|play|sleep|cry)\b/i.exec(clean);
+      // Same rules as the backend's offline story coach: every he/she + verb slip, and "in morning".
+      const sentences = clean.split(/(?<=[.!?])\s+/);
+      const slips = [...clean.matchAll(/\b(he|she) (eat|play|sleep|cry)\b/gi)].map((m) => {
+        const sentence = sentences.find((x) => x.includes(m[0])) ?? clean;
+        const verb = (m[2] ?? '').toLowerCase() === 'cry' ? 'cries' : `${m[2] ?? ''}s`;
+        return { wrong: m[0], better: sentence.replace(m[0], `${m[1] ?? ''} ${verb}`), tip: 'With he or she, add -s: “She eats”, “He plays”.', category: 'agreement' };
+      });
+      const article = /\b(in|at) (morning|evening|afternoon)\b/i.exec(clean);
+      if (article) {
+        const sentence = clean.split(/(?<=[.!?])\s+/).find((x) => x.includes(article[0])) ?? clean;
+        slips.push({ wrong: article[0], better: sentence.replace(article[0], `${article[1]} the ${article[2]}`), tip: 'Say “in the morning”, with “the”.', category: 'article' });
+      }
+      const [first, ...rest] = slips;
       const story: Story = {
         id: state.nextId++,
         heard: true,
         transcript: clean,
         positives: ['You explained it clearly'],
-        fix: agreement ? { wrong: agreement[0], better: `${capitalise(agreement[1] ?? '')} ${agreement[2] ?? ''}s well.` } : null,
-        tip: agreement ? 'With he or she, add -s: “She eats”, “He plays”.' : null,
+        fix: first ? { wrong: first.wrong, better: first.better } : null,
+        tip: first?.tip ?? null,
+        category: first?.category ?? null,
+        moreFixes: rest,
+        corrected: null,
         betterLine: 'Thank you for asking. She had a good day and enjoyed her lunch.',
         createdAt: `${todayIso()}T12:00:00`,
         snowflakes: SNOWFLAKES.story,
@@ -664,10 +679,6 @@ export function createMockApi({ storage = safeStorage(), latencyMs = 350, onboar
       save(state);
     },
   };
-
-  function capitalise(word: string): string {
-    return word.charAt(0).toUpperCase() + word.slice(1);
-  }
 
   function prefsOf(state: MockState): Preferences {
     return {

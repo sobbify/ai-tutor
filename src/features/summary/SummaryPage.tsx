@@ -16,6 +16,7 @@ import { Pill } from '@/components/ui/Pill';
 import { SaveLineButton } from '@/components/ui/SaveLineButton';
 import { SpeakerButton } from '@/components/ui/SpeakerButton';
 import { CategoryBadge, SaidTry } from '@/features/conversation/ChatBubbles';
+import { groupSlips, slipsOf } from '@/lib/slips';
 import type { JustFinishedState } from '@/features/conversation/useConversation';
 import { SnowflakeReward } from './SnowflakeReward';
 
@@ -115,6 +116,9 @@ function SummaryHero({ summary, justFinished, firstName }: { summary: Summary; j
 
 function PractiseList({ summary }: { summary: Summary }) {
   const count = summary.practise.length;
+  // Every slip from every line, sorted into its category (Tense, A / an / the, …).
+  const slips = summary.practise.flatMap((item) => slipsOf(item).map((slip, i) => ({ ...slip, transcript: item.transcript, key: `${item.turnId}:${i}` })));
+  const together = summary.practise.filter((item) => item.corrected);
   return (
     <section aria-labelledby="practise-heading" className="mt-3 flex min-h-[260px] flex-1 flex-col rounded-[26px] border border-line bg-surface px-4 pt-3.5 pb-4">
       <div className="flex items-center gap-3">
@@ -124,6 +128,7 @@ function PractiseList({ summary }: { summary: Summary }) {
         <h2 id="practise-heading" className="flex-1 text-[16px] font-bold">
           <span className="sr-only">{count} </span>
           {t.summary.sentencesToPractise(count)}
+          {slips.length > count && <span className="block text-[13px] font-semibold text-ink-2">{t.conversation.slipCount(slips.length)}</span>}
         </h2>
         {summary.previousPractiseCount !== null && (
           <span className="text-[13px] text-ink-2">{t.summary.lastTime(summary.previousPractiseCount)}</span>
@@ -132,25 +137,50 @@ function PractiseList({ summary }: { summary: Summary }) {
       {count === 0 ? (
         <p className="mt-4 rounded-[20px] bg-ok-bg px-4 py-3 text-[14.5px] font-semibold text-ok">{t.summary.nothingToPractise}</p>
       ) : (
-        <ul className="mt-3 flex flex-col gap-2.5">
-          {summary.practise.map((item) => (
-            <li key={item.turnId} className="flex animate-rise items-center gap-3 rounded-[20px] bg-mist py-3 pr-3 pl-3">
-              <div className="flex-1">
-                <CategoryBadge category={item.category} />
-                <p className="sr-only">
-                  {t.summary.youSaid} {item.transcript}. {t.summary.better} “{item.fix.better}”{item.tip ? ` ${t.conversation.tip}: ${item.tip}` : ''}
-                </p>
-                <div className="mt-1.5" aria-hidden="true">
-                  <SaidTry transcript={item.transcript} fix={item.fix} tip={item.tip} compact />
-                </div>
-              </div>
-              <span className="flex shrink-0 flex-col gap-1.5">
-                <SpeakerButton text={item.fix.better} speechId={`summary:${item.turnId}`} />
-                <SaveLineButton text={item.fix.better} momentId={summary.momentId} />
-              </span>
-            </li>
+        <div className="mt-3 flex flex-col gap-3.5">
+          {groupSlips(slips).map((group) => (
+            <section key={group.category} aria-label={t.conversation.categories[group.category] ?? group.category}>
+              <p className="flex items-center gap-1.5">
+                <CategoryBadge category={group.category} />
+                {group.slips.length > 1 && <span className="text-[12px] font-extrabold text-ink-2">× {group.slips.length}</span>}
+              </p>
+              <ul className="mt-2 flex flex-col gap-2.5">
+                {group.slips.map((slip) => (
+                  <li key={slip.key} className="flex animate-rise items-center gap-3 rounded-[20px] bg-mist py-3 pr-3 pl-3">
+                    <div className="flex-1">
+                      <p className="sr-only">
+                        {t.summary.youSaid} {slip.transcript}. {t.summary.better} “{slip.better}”{slip.tip ? ` ${t.conversation.tip}: ${slip.tip}` : ''}
+                      </p>
+                      <div aria-hidden="true">
+                        <SaidTry transcript={slip.transcript} fix={slip} tip={slip.tip} compact />
+                      </div>
+                    </div>
+                    <span className="flex shrink-0 flex-col gap-1.5">
+                      <SpeakerButton text={slip.better} speechId={`summary:${slip.key}`} />
+                      <SaveLineButton text={slip.better} momentId={summary.momentId} />
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
           ))}
-        </ul>
+          {together.length > 0 && (
+            <section aria-label={t.conversation.allTogether}>
+              <p className="text-[12px] font-extrabold tracking-wide text-ok uppercase">{t.conversation.allTogether}</p>
+              <ul className="mt-2 flex flex-col gap-2.5">
+                {together.map((item) => (
+                  <li key={item.turnId} className="flex items-center gap-3 rounded-[20px] border-2 border-ok-dot/60 bg-ok-bg/60 py-2.5 pr-3 pl-3">
+                    <p className="flex-1 text-[15px] leading-snug font-bold">{item.corrected}</p>
+                    <span className="flex shrink-0 flex-col gap-1.5">
+                      <SpeakerButton text={item.corrected ?? ''} speechId={`summary:${item.turnId}:together`} />
+                      <SaveLineButton text={item.corrected ?? ''} momentId={summary.momentId} />
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </div>
       )}
     </section>
   );
