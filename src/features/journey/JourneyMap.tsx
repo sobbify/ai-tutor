@@ -5,7 +5,7 @@ import { cn } from '@/lib/cn';
 import type { MomentProgress } from '@/types/tutor';
 import { CheckIcon, LockIcon } from '@/components/ui/Icons';
 import { Pill } from '@/components/ui/Pill';
-import { ICONS } from './icons';
+import { MomentGlyph } from './MomentGlyph';
 import { currentMomentId } from './journeyState';
 
 /*
@@ -153,11 +153,11 @@ export const JourneyMap = memo(function JourneyMap({ moments }: { moments: Momen
             <li key={m.id} className="contents">
               {/* Sibling of the link (not inside it) so the emoji isn't part of the link's text. */}
               <span
-                className="pointer-events-none absolute z-[1] flex size-[26px] items-center justify-center rounded-full bg-surface text-[14px] shadow-soft"
-                style={{ left: `calc(${pct(p.x)} + ${big ? 21 : 16.5}px)`, top: p.y - (big ? 44 : 35.5) }}
+                className="pointer-events-none absolute z-[1] flex size-[28px] items-center justify-center rounded-full bg-surface shadow-soft"
+                style={{ left: `calc(${pct(p.x)} + ${big ? 20 : 15.5}px)`, top: p.y - (big ? 45 : 36.5) }}
                 aria-hidden="true"
               >
-                {ICONS[m.icon]}
+                <MomentGlyph icon={m.icon} size={24} />
               </span>
               {to ? (
                 <Link viewTransition to={to} className={cn(nodeBox, 'group')} style={style}>

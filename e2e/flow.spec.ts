@@ -99,6 +99,13 @@ test('story, rehearse, certificate and settings screens are accessible', async (
   await page.getByRole('link', { name: /A Parent Calls/ }).click();
   await expect(page.getByText('Response 1 of 3')).toBeVisible();
 
+  await page.goto('/practise');
+  await expect(page.getByRole('heading', { name: 'Tell me what happened' })).toBeVisible();
+  await expectAccessible(page);
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Me', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Priya' })).toBeVisible();
+  await expectAccessible(page);
+
   await page.goto('/certificate');
   await expect(page.getByRole('heading', { name: 'Not yet earned' })).toBeVisible();
   await expectAccessible(page);
@@ -123,7 +130,7 @@ test.describe('dark appearance', () => {
     await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
     await expectAccessible(page);
 
-    for (const path of ['/progress', '/phrasebook', '/rehearse', '/certificate', '/settings']) {
+    for (const path of ['/practise', '/me', '/progress', '/phrasebook', '/rehearse', '/certificate', '/settings']) {
       await page.goto(path);
       await page.waitForLoadState('networkidle');
       await expectAccessible(page);

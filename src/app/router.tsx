@@ -10,6 +10,8 @@ export const routes: RouteObject[] = [
     children: [
       { index: true, lazy: async () => ({ Component: (await import('@/features/journey/JourneyPage')).default }) },
       { path: 'welcome', lazy: async () => ({ Component: (await import('@/features/welcome/WelcomePage')).default }) },
+      { path: 'practise', lazy: async () => ({ Component: (await import('@/features/practise/PractisePage')).default }) },
+      { path: 'me', lazy: async () => ({ Component: (await import('@/features/me/MePage')).default }) },
       { path: 'progress', lazy: async () => ({ Component: (await import('@/features/progress/ProgressPage')).default }) },
       { path: 'rehearse', lazy: async () => ({ Component: (await import('@/features/rehearse/RehearsePage')).default }) },
       { path: 'story', lazy: async () => ({ Component: (await import('@/features/story/StoryPage')).default }) },

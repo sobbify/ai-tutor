@@ -3,9 +3,10 @@ import { apiMode } from '@/api/client';
 import { audioUrls } from '@/api/httpApi';
 import { t } from '@/i18n';
 import { useDeletePhrase, usePhrasebook } from '@/hooks/queries';
-import { useBack } from '@/hooks/useBack';
+import { useTabBack } from '@/hooks/useTabBack';
 import { AppHeader } from '@/components/layout/AppHeader';
 import { Screen } from '@/components/layout/Screen';
+import { TabBar } from '@/components/layout/TabBar';
 import { ErrorBlock, LoadingBlock } from '@/components/layout/StatusScreens';
 import { HeroCard } from '@/components/ui/Card';
 import { ButtonLink } from '@/components/ui/Button';
@@ -30,7 +31,7 @@ function useOnline() {
 export default function PhrasebookPage() {
   const { data, isPending, error, refetch } = usePhrasebook();
   const remove = useDeletePhrase();
-  const back = useBack('/');
+  const back = useTabBack();
   const online = useOnline();
 
   // While online, fetch each line's audio once so the service worker has it for offline use.
@@ -63,7 +64,7 @@ export default function PhrasebookPage() {
             </span>
             <h2 className="mt-4 text-[18px] font-bold">{t.phrasebook.emptyTitle}</h2>
             <p className="mt-1.5 text-[14.5px] leading-[22px] text-ink-2">{t.phrasebook.empty}</p>
-            <ButtonLink to="/" size="md" className="mt-4">
+            <ButtonLink to="/practise" size="md" className="mt-4">
               {t.phrasebook.emptyCta}
             </ButtonLink>
           </HeroCard>
@@ -87,6 +88,7 @@ export default function PhrasebookPage() {
           </ul>
         )}
       </main>
+      <TabBar active="phrasebook" />
     </Screen>
   );
 }

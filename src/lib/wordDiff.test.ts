@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { closestSentence, diffWords } from './wordDiff';
+import { closestSentence, closestSpan, diffWords } from './wordDiff';
 
 const changed = (parts: { text: string; changed: boolean }[]) => parts.filter((p) => p.changed).map((p) => p.text.trim());
 
@@ -18,5 +18,10 @@ describe('diffWords', () => {
 
   it('finds the sentence a fix is about', () => {
     expect(closestSentence('She is settling well. She have many friends now.', 'She has many friends now.')).toBe('She have many friends now.');
+  });
+
+  it('trims a long sentence to the words a short fix is about', () => {
+    expect(closestSpan('A parent asked me about lunch and I said he eat well today.', 'He eats well.')).toBe('… he eat well …');
+    expect(closestSpan('She settle quickly.', 'She will settle in quickly.')).toBe('She settle quickly.');
   });
 });

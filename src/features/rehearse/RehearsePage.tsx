@@ -1,4 +1,3 @@
-import { Link } from 'react-router';
 import { t } from '@/i18n';
 import { useProgress } from '@/hooks/queries';
 import { useBack } from '@/hooks/useBack';
@@ -6,8 +5,7 @@ import type { MomentProgress } from '@/types/tutor';
 import { AppHeader } from '@/components/layout/AppHeader';
 import { Screen } from '@/components/layout/Screen';
 import { ErrorBlock, LoadingBlock } from '@/components/layout/StatusScreens';
-import { ChevronRightIcon } from '@/components/ui/Icons';
-import { ICONS } from '@/features/journey/icons';
+import { MomentRow } from '@/features/journey/MomentRow';
 import type { StartState } from '@/features/conversation/useConversation';
 
 /** "Rehearse now" (FR-17): any open moment, first three lines, about five minutes. */
@@ -44,17 +42,7 @@ function Group({ title, moments }: { title: string; moments: MomentProgress[] })
       <ul className="mt-2 space-y-2.5">
         {moments.map((m) => (
           <li key={m.id}>
-            <Link viewTransition
-              to={`/moments/${m.id}`}
-              state={{ quick: true } satisfies StartState}
-              className="flex items-center gap-3 rounded-card border border-line px-4 py-3.5 hover:bg-sky/30"
-            >
-              <span className="text-[20px]" aria-hidden="true">
-                {ICONS[m.icon]}
-              </span>
-              <span className="flex-1 text-[16px] font-bold">{m.title}</span>
-              <ChevronRightIcon size={18} className="text-ink-2" />
-            </Link>
+            <MomentRow to={`/moments/${m.id}`} state={{ quick: true } satisfies StartState} icon={m.icon} title={m.title} />
           </li>
         ))}
       </ul>

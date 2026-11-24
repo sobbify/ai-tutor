@@ -13,7 +13,7 @@ import { HeroCard } from '@/components/ui/Card';
 import { CheckIcon, KeyboardIcon, MicIcon, StopIcon, TrashIcon } from '@/components/ui/Icons';
 import { SaveLineButton } from '@/components/ui/SaveLineButton';
 import { SpeakerButton } from '@/components/ui/SpeakerButton';
-import { HighlightedText } from '@/features/conversation/ChatBubbles';
+import { HighlightedText, SaidTry } from '@/features/conversation/ChatBubbles';
 
 type Phase = 'idle' | 'requesting' | 'listening' | 'checking' | 'result';
 
@@ -223,20 +223,14 @@ function StoryResult({ story, onAgain }: { story: Story; onAgain: () => void }) 
         ))}
       </ul>
       {story.fix && (
-        <section className="rounded-[18px] border border-line bg-mist p-3">
-          <h2 className="text-[14px] font-bold text-action">{t.conversation.grammarFix}</h2>
-          <p className="mt-1 text-[13.5px] text-ink-2">
-            {t.conversation.insteadOf} <s>{story.fix.wrong}</s>, {t.conversation.say}
-          </p>
-          <div className="mt-1.5 flex items-center justify-between gap-2">
-            <p className="text-[15.5px] leading-snug font-bold">“{story.fix.better}”</p>
+        <section aria-label={t.conversation.grammarFix} className="rounded-[22px] border-2 border-action bg-surface px-4 pt-3 pb-3.5">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-[14px] font-extrabold text-action">{t.conversation.grammarFix}</h2>
             <SpeakerButton text={story.fix.better} speechId={`story-fix:${story.id ?? 0}`} />
           </div>
-          {story.tip && (
-            <p className="mt-2.5 border-t border-line pt-2 text-[13.5px] leading-5">
-              <b className="text-action">{t.conversation.tip}:</b> {story.tip}
-            </p>
-          )}
+          <div className="mt-1.5 rounded-[16px] bg-mist px-3 py-2.5">
+            <SaidTry transcript={story.transcript} fix={story.fix} tip={story.tip} />
+          </div>
         </section>
       )}
       {story.betterLine && (

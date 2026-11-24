@@ -13,6 +13,7 @@ import { ChartIcon, CheckIcon } from '@/components/ui/Icons';
 import { Pill } from '@/components/ui/Pill';
 import { SegmentedProgress } from '@/components/ui/Progress';
 import { currentMomentId, doneCount } from '@/features/journey/journeyState';
+import { MomentGlyph } from '@/features/journey/MomentGlyph';
 
 /** Screens 16 (progress) and 17 (empty). */
 export default function ProgressPage() {
@@ -125,8 +126,9 @@ function ProgressDetails({ moments }: { moments: MomentProgress[] }) {
 const MomentRow = memo(function MomentRow({ moment: m }: { moment: MomentProgress }) {
   if (m.status === 'locked') {
     return (
-      <li className="flex items-center justify-between rounded-[26px] border border-dashed border-line bg-mist px-4 py-2.5">
-        <span className="text-[15.5px] font-semibold text-ink-2">{m.title}</span>
+      <li className="flex items-center gap-2.5 rounded-[26px] border border-dashed border-line bg-mist py-2 pr-4 pl-2">
+        <MomentGlyph icon={m.icon} size={32} className="opacity-60 grayscale" />
+        <span className="flex-1 text-[15.5px] font-semibold text-ink-2">{m.title}</span>
         <span className="text-[13px] font-semibold text-ink-2">{t.progress.locked}</span>
       </li>
     );
@@ -135,8 +137,9 @@ const MomentRow = memo(function MomentRow({ moment: m }: { moment: MomentProgres
   if (m.status !== 'done' || !m.firstTry) {
     const label = m.status === 'in_progress' ? t.progress.inProgress(m.responsesDone, m.responsesTotal) : t.progress.notStarted;
     return (
-      <li className="flex items-center justify-between gap-2 rounded-[26px] border border-line px-4 py-2.5">
-        <span className="text-[15.5px] font-bold">{m.title}</span>
+      <li className="flex items-center gap-2.5 rounded-[26px] border border-line py-2 pr-4 pl-2">
+        <MomentGlyph icon={m.icon} size={32} />
+        <span className="flex-1 text-[15.5px] font-bold">{m.title}</span>
         <Pill tone={m.status === 'in_progress' ? 'sky' : 'mist'} className="text-[13px]">
           {label}
         </Pill>
@@ -152,8 +155,9 @@ const MomentRow = memo(function MomentRow({ moment: m }: { moment: MomentProgres
   return (
     <li className="rounded-[26px] border border-line px-4 pt-2.5 pb-2.5">
       <div className="flex items-start justify-between gap-2">
-        <div>
-          <h3 className="text-[15.5px] font-bold">{m.title}</h3>
+        <MomentGlyph icon={m.icon} size={32} className="-ml-2" />
+        <div className="min-w-0 flex-1">
+          <h3 className="text-[15.5px] leading-6 font-bold">{m.title}</h3>
           {compared && <p className="text-[13px] text-ink-2">{t.progress.practised(m.timesPractised)}</p>}
         </div>
         {compared ? (

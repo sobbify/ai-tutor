@@ -10,7 +10,7 @@ import { ErrorBlock, LoadingBlock } from '@/components/layout/StatusScreens';
 import { Button, ButtonLink } from '@/components/ui/Button';
 import { HeroCard } from '@/components/ui/Card';
 import { CheckIcon, LockIcon } from '@/components/ui/Icons';
-import { ICONS } from '@/features/journey/icons';
+import { MomentGlyph } from '@/features/journey/MomentGlyph';
 import { Face } from '@/features/conversation/Portrait';
 
 const ELSA = { name: 'ELSA', role: 'Coach', initials: 'EL', posterUrl: null };
@@ -119,7 +119,7 @@ function Hardest({ onDone }: { onDone: () => void }) {
                   )}
                 >
                   <input type="radio" name="hardest" value={m.id} checked={choice === m.id} onChange={() => setChoice(m.id)} className="size-5 accent-[var(--color-action)]" />
-                  <span aria-hidden="true">{ICONS[m.icon]}</span>
+                  <MomentGlyph icon={m.icon} size={34} />
                   {m.title}
                 </label>
               ))}

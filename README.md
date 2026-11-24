@@ -1,5 +1,7 @@
 # ELSA — AI English speaking tutor (MVP)
 
+[![CI](https://github.com/sobbify/ai-tutor/actions/workflows/ci.yml/badge.svg)](https://github.com/sobbify/ai-tutor/actions/workflows/ci.yml)
+
 A private English speaking coach for EuroKids teachers, inside Buddy's World. Teachers rehearse
 real moments with parents — drop-off, pick-up, parent meetings, worried parents — in a 15-day
 programme: a short Learn step, a voice role-play with an AI parent (Gemini Live, realtime), one
@@ -105,6 +107,11 @@ npm run lint && npm test && npm run build
 npm run test:e2e     # Playwright + axe accessibility checks (mock build)
 ```
 
+- **Four main screens in a bottom tab bar** (Buddy's World navigation: grey rounded outline icons;
+  the active one fills in white on a blue pill): **Home** (today's day and moment, the 3-week map),
+  **Practise** (Tell me what happened, Rehearse now, her hardest moment, anytime moments),
+  **Phrasebook**, and **Me** (streak, practice days, moments done, lines saved; then progress,
+  certificate and settings). Moments use colourful illustrated icons (`journey/MomentGlyph.tsx`).
 - **The role-play is a video call** (the layout of the Gemini Live tutor's call screen): call
   timer; the parent on screen with her own camera picture-in-picture (off by default, never sent or
   recorded); a **live transcript** of both sides — her words appear as she speaks; a **correction

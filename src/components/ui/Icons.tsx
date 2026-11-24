@@ -173,3 +173,43 @@ export const ArrowRightIcon = (p: IconProps) => (
     <path d="M5 12h14M13 6l6 6-6 6" />
   </Icon>
 );
+
+/*
+ * Bottom-tab icons in the Buddy's World style: rounded outline when idle, filled when active
+ * (Material Symbols Rounded feel, drawn on the same 24px grid).
+ */
+type TabIconProps = IconProps & { filled?: boolean };
+
+export const HomeIcon = ({ filled, ...p }: TabIconProps) => (
+  <Icon {...p}>
+    <path
+      d="M4 10.4 11.2 4.6a1.3 1.3 0 0 1 1.6 0L20 10.4v8.1A2.5 2.5 0 0 1 17.5 21h-2.3a1 1 0 0 1-1-1v-4.2a2.2 2.2 0 0 0-4.4 0V20a1 1 0 0 1-1 1H6.5A2.5 2.5 0 0 1 4 18.5Z"
+      fill={filled ? 'currentColor' : 'none'}
+    />
+  </Icon>
+);
+
+export const PractiseIcon = ({ filled, ...p }: TabIconProps) => (
+  <Icon {...p}>
+    <path
+      d="M12 3.5c4.7 0 8.5 3.2 8.5 7.3s-3.8 7.3-8.5 7.3c-.9 0-1.8-.1-2.6-.3L5.6 19.6a.6.6 0 0 1-.8-.7l.8-3.1C4.3 14.5 3.5 12.7 3.5 10.8c0-4.1 3.8-7.3 8.5-7.3Z"
+      fill={filled ? 'currentColor' : 'none'}
+    />
+    <path d="M9.5 9v3.4M12 7.6v6.2M14.5 9v3.4" stroke={filled ? 'var(--tab-ink, #fff)' : 'currentColor'} />
+  </Icon>
+);
+
+export const PhrasebookIcon = ({ filled, ...p }: TabIconProps) => (
+  <Icon {...p}>
+    <path d="M5 5.5A2.5 2.5 0 0 1 7.5 3H19v15H7.5A2.5 2.5 0 0 0 5 20.5Z" fill={filled ? 'currentColor' : 'none'} />
+    <path d="M5 20.5A2.5 2.5 0 0 0 7.5 23H19v-5" />
+    <path d="M10 3v7l2-1.4 2 1.4V3" stroke={filled ? 'var(--tab-ink, #fff)' : 'currentColor'} fill="none" />
+  </Icon>
+);
+
+export const MeIcon = ({ filled, ...p }: TabIconProps) => (
+  <Icon {...p}>
+    <circle cx="12" cy="8" r="4" fill={filled ? 'currentColor' : 'none'} />
+    <path d="M4.5 20.2c.9-3.6 4-5.7 7.5-5.7s6.6 2.1 7.5 5.7a.7.7 0 0 1-.7.8H5.2a.7.7 0 0 1-.7-.8Z" fill={filled ? 'currentColor' : 'none'} />
+  </Icon>
+);

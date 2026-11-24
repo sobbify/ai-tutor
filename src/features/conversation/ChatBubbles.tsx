@@ -1,7 +1,7 @@
 import { memo, type ReactNode } from 'react';
 import { t } from '@/i18n';
 import { cn } from '@/lib/cn';
-import { closestSentence, diffWords } from '@/lib/wordDiff';
+import { closestSentence, closestSpan, diffWords } from '@/lib/wordDiff';
 import type { Character, GrammarFix, Reply } from '@/types/tutor';
 import { CheckIcon } from '@/components/ui/Icons';
 import { SaveLineButton } from '@/components/ui/SaveLineButton';
@@ -44,8 +44,16 @@ export function CategoryBadge({ category, className }: { category: string | null
  * in the better sentence the new words are bold on green. Shared by the live card and the chat.
  */
 export function SaidTry({ transcript, fix, tip, compact = false }: { transcript: string; fix: GrammarFix; tip?: string | null; compact?: boolean }) {
-  const said = closestSentence(transcript, fix.better);
+  const said = closestSpan(closestSentence(transcript, fix.better), fix.better);
   const diff = diffWords(said, fix.better);
+  // A whole new sentence (not a small fix) reads better plain than covered in marks.
+  const kept = diff.better.filter((p) => !p.changed).reduce((n, p) => n + p.text.trim().split(/\s+/).filter(Boolean).length, 0);
+  const total = fix.better.trim().split(/\s+/).length;
+  const rewrite = kept / Math.max(1, total) < 0.4;
+  if (rewrite) {
+    diff.said = [{ text: said, changed: false }];
+    diff.better = [{ text: fix.better, changed: false }];
+  }
   return (
     <div className={cn('flex flex-col', compact ? 'gap-1' : 'gap-1.5')}>
       <p className={cn('leading-snug text-ink-2', compact ? 'text-[13.5px]' : 'text-[14.5px]')}>

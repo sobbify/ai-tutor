@@ -70,7 +70,7 @@ export default function ConversationPage() {
 
   return (
     <Screen className="h-dvh min-h-0">
-      <AppHeader title={moment.title} onBack={back} right={<CallTimer />} />
+      <AppHeader title={moment.title} onBack={back} />
 
       <div className="flex h-11 shrink-0 items-center gap-3 px-5">
         <span className="shrink-0 text-[13.5px] font-bold text-ink-2" aria-hidden="true">
@@ -78,6 +78,7 @@ export default function ConversationPage() {
         </span>
         {c.quick && <Pill className="shrink-0 text-[12px]">{t.conversation.quick}</Pill>}
         <ProgressBar value={position} max={total} label={t.conversation.responseOf(position, total)} className="flex-1" />
+        <CallTimer />
       </div>
 
       <main className="flex min-h-0 flex-1 flex-col">
@@ -138,7 +139,7 @@ function CallTimer() {
   }, []);
   const s = Math.floor((now - start) / 1000);
   return (
-    <span className="inline-flex h-8 shrink-0 items-center gap-2 rounded-full bg-white px-3 text-[14px] font-extrabold text-[#2c2b2b] tabular-nums" role="timer" aria-label={t.conversation.callTime}>
+    <span className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full bg-mist px-2.5 text-[13px] font-extrabold text-ink tabular-nums" role="timer" aria-label={t.conversation.callTime}>
       <span className="size-2 rounded-full bg-stop" aria-hidden="true" />
       {Math.floor(s / 60)}:{String(s % 60).padStart(2, '0')}
     </span>
@@ -257,7 +258,7 @@ function RoundButton({
       aria-label={label}
       aria-pressed={pressed}
       className={cn(
-        'flex size-12 shrink-0 items-center justify-center rounded-full transition-colors disabled:opacity-40',
+        'flex size-11 shrink-0 items-center justify-center rounded-full transition-colors disabled:opacity-40 min-[380px]:size-12',
         tone === 'on' && 'bg-action text-on-action',
         tone === 'idle' && 'bg-mist text-ink hover:bg-line',
         tone === 'end' && 'bg-stop text-white hover:brightness-95',
@@ -330,7 +331,7 @@ function CallControls({
         disabled={c.advancing}
         aria-busy={c.advancing}
         aria-label={t.conversation.continue}
-        className="flex h-16 items-center gap-2 rounded-full bg-action px-6 text-[17px] font-bold text-on-action shadow-[0_6px_16px_rgb(0_62_242/0.3)] hover:bg-action-strong disabled:opacity-60"
+        className="flex h-16 items-center gap-1.5 rounded-full bg-action px-5 text-[17px] font-bold text-on-action shadow-[0_6px_16px_rgb(0_62_242/0.3)] hover:bg-action-strong disabled:opacity-60 min-[380px]:px-6"
       >
         {t.conversation.continue}
         <ArrowRightIcon size={20} />
@@ -366,7 +367,7 @@ function CallControls({
           {c.actionError.message}
         </p>
       )}
-      <div className="mt-1.5 flex items-center justify-between">
+      <div className="mt-1.5 flex items-center justify-between gap-1">
         <RoundButton label={camOn ? t.conversation.cameraOff : t.conversation.cameraOn} pressed={camOn} tone={camOn ? 'on' : 'idle'} onClick={camera.toggle} disabled={camera.status === 'starting'}>
           {camOn ? <CameraIcon size={22} /> : <CameraOffIcon size={22} />}
         </RoundButton>
@@ -377,7 +378,7 @@ function CallControls({
         <RoundButton
           label={c.typing ? t.conversation.speakInstead : t.conversation.typeInstead}
           pressed={c.typing}
-          tone={c.typing ? 'on' : 'idle'}
+          tone={c.typing && (phase === 'turn' || phase === 'not-heard') ? 'on' : 'idle'}
           onClick={() => c.setTyping(!c.typing)}
           disabled={phase !== 'turn' && phase !== 'not-heard'}
         >

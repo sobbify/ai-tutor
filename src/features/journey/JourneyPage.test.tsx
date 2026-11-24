@@ -16,10 +16,34 @@ describe('Home', () => {
     expect(within(map).getByRole('link', { name: /Pick-up Update/ })).toBeInTheDocument();
     expect(within(map).getAllByText('Locked')).toHaveLength(2);
 
-    expect(screen.getByRole('link', { name: /Rehearse now/ })).toHaveAttribute('href', '/rehearse');
-    expect(screen.getByRole('link', { name: /Tell me what happened/ })).toHaveAttribute('href', '/story');
-    expect(screen.getByRole('link', { name: /A Parent Calls/ })).toHaveAttribute('href', '/moments/phone-call/learn');
     expect(screen.getByRole('link', { name: /See Progress/ })).toHaveAttribute('href', '/progress');
+
+    // The four main screens sit in a tab bar; Home is the current one.
+    const tabs = screen.getByRole('navigation', { name: 'Main' });
+    expect(within(tabs).getByRole('link', { name: 'Home' })).toHaveAttribute('aria-current', 'page');
+    expect(within(tabs).getByRole('link', { name: 'Practise' })).toHaveAttribute('href', '/practise');
+    expect(within(tabs).getByRole('link', { name: 'Phrasebook' })).toHaveAttribute('href', '/phrasebook');
+    expect(within(tabs).getByRole('link', { name: 'Me' })).toHaveAttribute('href', '/me');
+  });
+
+  it('Practise tab: story, rehearse and the anytime moments', async () => {
+    renderRoute('/practise');
+    expect(await screen.findByRole('heading', { name: 'Tell me what happened' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Tell ELSA' })).toHaveAttribute('href', '/story');
+    expect(screen.getByRole('link', { name: 'Pick a moment' })).toHaveAttribute('href', '/rehearse');
+    expect(screen.getByRole('link', { name: /A Parent Calls/ })).toHaveAttribute('href', '/moments/phone-call/learn');
+    expect(within(screen.getByRole('navigation', { name: 'Main' })).getByRole('link', { name: 'Practise' })).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('Me tab: her numbers, then progress, certificate and settings', async () => {
+    const api = testApi();
+    api.seedDemoProgress();
+    renderRoute('/me', api);
+    expect(await screen.findByRole('heading', { name: 'Priya' })).toBeInTheDocument();
+    expect(screen.getByText('Practice days').closest('div')).toHaveTextContent(/Practice days\d+/);
+    expect(screen.getByRole('link', { name: /Your Progress/ })).toHaveAttribute('href', '/progress');
+    expect(screen.getByRole('link', { name: /Your Certificate/ })).toHaveAttribute('href', '/certificate');
+    expect(screen.getByRole('link', { name: /Settings and Privacy/ })).toHaveAttribute('href', '/settings');
   });
 
   it('in progress: done moments link to their summary, current shows Continue, streak shows', async () => {

@@ -76,3 +76,24 @@ export function closestSentence(transcript: string, better: string): string {
   }
   return best;
 }
+
+/**
+ * When the fix is much shorter than her sentence ("He eats well." for a long story sentence), the
+ * stretch of her words it corrects, with "…" where words were left out on either side.
+ */
+export function closestSpan(sentence: string, better: string): string {
+  const words = tokens(sentence);
+  const target = tokens(better);
+  if (words.length <= target.length + 3) return sentence.trim();
+  let best = { start: 0, end: words.length, score: -1 };
+  for (let size = Math.max(1, target.length - 2); size <= Math.min(words.length, target.length + 3); size++) {
+    for (let start = 0; start + size <= words.length; start++) {
+      const window = words.slice(start, start + size);
+      const common = lcs(window, target)[0]?.[0] ?? 0;
+      const score = common - size * 0.01; // prefer the tighter window on a tie
+      if (score > best.score) best = { start, end: start + size, score };
+    }
+  }
+  const text = words.slice(best.start, best.end).join('').trim();
+  return `${best.start > 0 ? '… ' : ''}${text}${best.end < words.length ? ' …' : ''}`;
+}
