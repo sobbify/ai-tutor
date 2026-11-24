@@ -34,7 +34,7 @@ export function SnowflakeReward({ snowflakes }: { snowflakes: SnowflakesEarned }
       <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 px-4 py-3">
         <span className="flex items-center gap-1.5" aria-hidden="true">
           <Snowflake size={40} className="animate-pop" />
-          <span className="text-[34px] leading-none font-extrabold text-action tabular-nums">{t.snowflakes.earned(shown)}</span>
+          <span className="snowflake-gradient text-[34px] leading-none font-extrabold tabular-nums">{t.snowflakes.earned(shown)}</span>
         </span>
         {/* Reasons never wrap: on a narrow phone the list moves under the number instead. */}
         <ul className="min-w-[200px] flex-1 space-y-0.5 text-[13.5px] leading-5 font-semibold text-ink-2">

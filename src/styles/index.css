@@ -314,6 +314,23 @@
     translate: 0 -5px;
   }
 }
+/* The "+15" snowflake reward: light cyan into ocean blue (lighter at the end in dark mode). */
+.snowflake-gradient {
+  background-image: linear-gradient(100deg, #29c5f6 0%, #1f92fc 45%, #0b4fa8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  padding-right: 2px; /* the clip can shave the last glyph's edge */
+}
+:root[data-theme='dark'] .snowflake-gradient {
+  background-image: linear-gradient(100deg, #7fe7ff 0%, #4fb4ff 50%, #2f7cf0 100%);
+}
+@media (forced-colors: active) {
+  .snowflake-gradient {
+    background-image: none;
+    color: CanvasText;
+  }
+}
 /* START / CONTINUE tag above the current step: week colour, AA on either surface. */
 .path-tag {
   color: var(--tag);

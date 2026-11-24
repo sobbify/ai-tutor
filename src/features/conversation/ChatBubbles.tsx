@@ -11,24 +11,54 @@ import { Face } from './Portrait';
 
 /** The slip inside her words: red, wavy-underlined, on a soft red wash (the colour isn't the only cue). */
 const SLIP = 'rounded-[4px] bg-danger-wash px-0.5 text-danger-ink underline decoration-wavy decoration-[1.5px] underline-offset-[4px]';
+/** A mistake in a "You said" line: underlined (wavy, red), never struck out. */
+const UNDERLINE = 'text-danger-ink underline decoration-danger-ink decoration-wavy decoration-[1.5px] underline-offset-[4px]';
+/** What she fixed since her last try: a green highlight, bold (and named for screen readers). */
+const IMPROVED = 'rounded-[4px] bg-ok-bg px-0.5 font-bold text-ok ring-1 ring-ok-dot/50';
 
-/** Marks the first occurrence of each slip (`phrase`, or every one in `phrases`) inside `text`. */
-export function HighlightedText({ text, phrase, phrases }: { text: string; phrase?: string | null; phrases?: string[] }) {
+/** Where `word` first appears in `text` as a whole word (case-insensitive), or -1. */
+function findWord(text: string, word: string): number {
+  const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const m = new RegExp(`(^|[^\\p{L}\\p{N}'’])(${escaped})(?![\\p{L}\\p{N}])`, 'iu').exec(text);
+  return m ? m.index + (m[1]?.length ?? 0) : -1;
+}
+
+/**
+ * Her words with each slip marked (`phrase`, or every one in `phrases`: wavy red) and, after
+ * another try, each word she fixed highlighted (`improved`: green) — so she sees her progress.
+ */
+export function HighlightedText({
+  text,
+  phrase,
+  phrases,
+  improved = [],
+  underline = false,
+}: {
+  text: string;
+  phrase?: string | null;
+  phrases?: string[];
+  improved?: string[];
+  /** Plain wavy underline instead of the marker wash (for "before" lines). */
+  underline?: boolean;
+}) {
   const wanted = (phrases ?? (phrase ? [phrase] : [])).filter(Boolean);
-  // Find each slip's first match, then keep the ones that don't overlap, left to right.
-  const spans = wanted
-    .map((p) => ({ at: text.toLowerCase().indexOf(p.toLowerCase()), len: p.length }))
+  // Find each first match, then keep the ones that don't overlap, left to right.
+  const spans = [
+    ...wanted.map((p) => ({ at: text.toLowerCase().indexOf(p.toLowerCase()), len: p.length, kind: 'slip' as const })),
+    ...improved.filter(Boolean).map((w) => ({ at: findWord(text, w), len: w.length, kind: 'fixed' as const })),
+  ]
     .filter((x) => x.at >= 0)
     .sort((a, b) => a.at - b.at)
     .filter((x, i, all) => i === 0 || x.at >= (all[i - 1]?.at ?? 0) + (all[i - 1]?.len ?? 0));
   if (!spans.length) return <>{text}</>;
   const out: ReactNode[] = [];
   let from = 0;
-  spans.forEach(({ at, len }, i) => {
+  spans.forEach(({ at, len, kind }, i) => {
     out.push(text.slice(from, at));
+    const label = kind === 'slip' ? t.conversation.mistakeSr : t.conversation.improvedSr;
     out.push(
-      <mark key={i} className={SLIP}>
-        <span className="sr-only">(mistake: </span>
+      <mark key={i} className={kind === 'fixed' ? IMPROVED : underline ? cn(UNDERLINE, 'bg-transparent') : SLIP}>
+        <span className="sr-only">({label}: </span>
         {text.slice(at, at + len)}
         <span className="sr-only">)</span>
       </mark>,
@@ -37,6 +67,21 @@ export function HighlightedText({ text, phrase, phrases }: { text: string; phras
   });
   out.push(text.slice(from));
   return <>{out}</>;
+}
+
+/** "You fixed it: “has”" — shown when another try fixed a slip from the one before. */
+export function YouFixed({ words, className }: { words: string[]; className?: string }) {
+  if (!words.length) return null;
+  return (
+    <p className={cn('flex items-start gap-1.5 text-[13.5px] leading-5 font-bold text-ok', className)}>
+      <span className="mt-px flex size-[18px] shrink-0 items-center justify-center rounded-full bg-ok-bg" aria-hidden="true">
+        <CheckIcon size={11} strokeWidth={3.2} />
+      </span>
+      <span>
+        {t.conversation.youFixed(words)}. <span className="font-semibold">{t.conversation.youFixedCheer}</span>
+      </span>
+    </p>
+  );
 }
 
 /**
@@ -138,6 +183,17 @@ export function SaidTry({
   const kept = diff.better.filter((p) => !p.changed).reduce((n, p) => n + p.text.trim().split(/\s+/).filter(Boolean).length, 0);
   const total = fix.better.trim().split(/\s+/).length;
   const rewrite = kept / Math.max(1, total) < 0.4;
+  if (!rewrite && !diff.said.some((p) => p.changed) && fix.wrong) {
+    // The fix only adds words ("will settle in"): underline the slip she made ("settle").
+    const at = findWord(said, fix.wrong);
+    if (at >= 0) {
+      diff.said = [
+        { text: said.slice(0, at), changed: false },
+        { text: said.slice(at, at + fix.wrong.length), changed: true },
+        { text: said.slice(at + fix.wrong.length), changed: false },
+      ].filter((p) => p.text);
+    }
+  }
   if (rewrite) {
     diff.said = [{ text: said, changed: false }];
     diff.better = [{ text: fix.better, changed: false }];
@@ -151,9 +207,11 @@ export function SaidTry({
         <span className="mr-1.5 text-[11.5px] font-extrabold tracking-wide text-ink-2 uppercase">{t.conversation.youSaidLabel}</span>{' '}
         {diff.said.map((part, i) =>
           part.changed ? (
-            <s key={i} className="text-danger-ink decoration-danger-ink decoration-2">
+            <span key={i} className={UNDERLINE}>
+              <span className="sr-only">({t.conversation.mistakeSr}: </span>
               {part.text}
-            </s>
+              <span className="sr-only">)</span>
+            </span>
           ) : (
             <span key={i}>{part.text}</span>
           ),
@@ -231,9 +289,10 @@ export const UserBubble = memo(function UserBubble({
       <div className="max-w-full rounded-[22px] rounded-br-md border-2 border-action bg-surface px-3.5 py-2.5">
         <p className="text-[15.5px] leading-[23px]">
           <span className="sr-only">{t.conversation.you}: </span>
-          <HighlightedText text={reply.transcript} phrases={slips.map((s) => s.wrong)} />
+          <HighlightedText text={reply.transcript} phrases={slips.map((s) => s.wrong)} improved={reply.improved ?? []} />
         </p>
       </div>
+      {showCorrection && <YouFixed words={reply.improved ?? []} className="pr-1" />}
       {!showCorrection ? null : slips.length ? (
         <div className="w-full rounded-[18px] border-2 border-action/70 bg-surface px-3.5 py-2.5">
           {slips.length === 1 ? <CategoryBadge category={slips[0]?.category} /> : <p className="text-[13px] font-extrabold text-action">{t.conversation.slipCount(slips.length)}</p>}
@@ -330,6 +389,7 @@ export const CorrectionCard = memo(function CorrectionCard({
         </button>
       </div>
 
+      <YouFixed words={reply.improved ?? []} className="mt-1" />
       <ul className="mt-1 space-y-1">
         {positives.map((p) => (
           <li key={p} className="flex items-center gap-2 text-[14px] font-bold text-ok">

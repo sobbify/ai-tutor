@@ -107,6 +107,8 @@ export const ReplySchema = z.object({
   feedback: FeedbackSchema,
   attempt: z.number().int().min(1),
   typed: z.boolean().optional(),
+  /** After "Say it again": the words she now says right that she slipped on before. */
+  improved: z.array(z.string()).optional(),
 });
 export type Reply = z.infer<typeof ReplySchema>;
 
@@ -188,6 +190,16 @@ export const SnowflakesEarnedSchema = z.object({
 });
 export type SnowflakesEarned = z.infer<typeof SnowflakesEarnedSchema>;
 
+export const ImprovedItemSchema = z.object({
+  turnId: z.string(),
+  when: z.enum(['again', 'last_time']),
+  before: z.string(),
+  beforeWrongs: z.array(z.string()),
+  after: z.string(),
+  words: z.array(z.string()),
+});
+export type ImprovedItem = z.infer<typeof ImprovedItemSchema>;
+
 export const SummarySchema = z.object({
   momentId: MomentIdSchema,
   title: z.string(),
@@ -199,6 +211,8 @@ export const SummarySchema = z.object({
   /** How many sentences to practise there were on the previous run (null on the first run). */
   previousPractiseCount: z.number().int().min(0).nullable(),
   snowflakes: SnowflakesEarnedSchema.nullable().optional(),
+  /** Lines she got right after slipping on them: on another try, or since her last run. */
+  improved: z.array(ImprovedItemSchema).optional(),
 });
 export type Summary = z.infer<typeof SummarySchema>;
 

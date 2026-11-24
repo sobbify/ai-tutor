@@ -5,6 +5,7 @@ import {
   StorySchema,
   type Certificate,
   type Group,
+  type ImprovedItem,
   type GroupStatus,
   type Home,
   type Moment,
@@ -23,6 +24,8 @@ import {
 import { ApiError, type SubmitReplyInput, type TutorApi } from '../types';
 import { LEARNER, MOMENTS, type MockMoment, type MockTurn } from './content';
 import { evaluateReply } from './evaluator';
+import { improvedWords } from '@/lib/improve';
+import { slipsOf } from '@/lib/slips';
 import { MAX_LEVEL, QUICK_LINES, WEEK_TITLES, isoDay, programmeState, streak, PROGRAMME_DAYS } from './programme';
 
 /**
@@ -439,6 +442,8 @@ export function createMockApi({ storage = safeStorage(), latencyMs = 350, onboar
         feedback,
         attempt: (previous?.attempt ?? 0) + 1,
         typed: Boolean(input.typed),
+        // After "Say it again": what she fixed since her last try at this line.
+        improved: previous?.feedback.fix ? improvedWords(previous.transcript, slipsOf(previous.feedback), transcript) : [],
       };
       if (feedback.heard) {
         run.replies = [...run.replies.filter((r) => r.turnId !== turn.id), reply];
@@ -512,6 +517,18 @@ export function createMockApi({ storage = safeStorage(), latencyMs = 350, onboar
         nextMomentId: next?.id ?? null,
         practise: fixesOf(last),
         previousPractiseCount: before ? fixesOf(before).length : null,
+        improved: runTurns(m, last).flatMap((t): ImprovedItem[] => {
+          const first = last.firstAttempts[t.id];
+          const now = last.replies.find((r) => r.turnId === t.id);
+          if (!first || !now) return [];
+          const item = (when: ImprovedItem['when'], then: { transcript: string; feedback: Reply['feedback'] }, after: string): ImprovedItem[] => {
+            const words = improvedWords(then.transcript, slipsOf(then.feedback), after);
+            return words.length ? [{ turnId: t.id, when, before: then.transcript, beforeWrongs: slipsOf(then.feedback).map((x) => x.wrong), after, words }] : [];
+          };
+          if (now.attempt > 1 && first.feedback.fix) return item('again', first, now.transcript);
+          const earlier = before?.firstAttempts[t.id];
+          return earlier?.feedback.fix ? item('last_time', earlier, first.transcript) : [];
+        }),
         snowflakes: ((): SnowflakesEarned => {
           const items = runItems(last);
           return { earned: items.reduce((n, i) => n + i.amount, 0), items, week: snowflakesOf(state, weekStartIso()) };

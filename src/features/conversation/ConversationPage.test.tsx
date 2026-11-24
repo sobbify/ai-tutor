@@ -53,7 +53,7 @@ describe('Conversation', () => {
     const card = screen.getByRole('region', { name: 'Grammar Fix' });
     expect(card).toHaveTextContent('You answered her question clearly');
     expect(card).toHaveTextContent('Tense'); // what kind of slip it was
-    expect(card).toHaveTextContent(/You said\s+… she settle quickly\./); // “Don’t worry,” wasn’t the slip
+    expect(card).toHaveTextContent(/You said\s+… she \(mistake: settle\) quickly\./); // “Don’t worry,” wasn’t the slip; the slip is underlined
     expect(card).toHaveTextContent(/Try\s+She will settle in quickly\./);
     // The slip is marked in her own words, and the new words in the fix stand out.
     expect(within(card).getByText('will', { selector: 'ins' })).toBeInTheDocument();
@@ -176,6 +176,44 @@ describe('Conversation', () => {
     // Every slip is marked in her own words in the chat.
     const marks = screen.getByRole('list', { name: 'Conversation so far' }).querySelectorAll('mark');
     expect([...marks].map((m) => m.textContent)).toEqual(['(mistake: settle)', '(mistake: have)', '(mistake: like)']);
+  });
+
+  it('after “Say it again”, highlights what she fixed and the summary lists it', async () => {
+    const user = userEvent.setup();
+    const { router } = renderRoute('/moments/morning-greeting');
+    await user.click(await screen.findByRole('button', { name: 'Type instead' }));
+    await user.type(screen.getByRole('textbox', { name: 'Type your reply' }), 'Don’t worry, she settle quickly.');
+    await user.click(screen.getByRole('button', { name: 'Send' }));
+    expect(await screen.findByRole('heading', { name: 'Grammar Fix' })).toBeInTheDocument();
+    // Mistakes are underlined, not struck out.
+    const card = screen.getByRole('region', { name: 'Grammar Fix' });
+    expect(card.querySelector('s, del')).toBeNull();
+    expect(card).toHaveTextContent('(mistake: settle)');
+
+    await user.click(within(card).getByRole('button', { name: 'Say It Again' }));
+    const box = await screen.findByRole('textbox', { name: 'Type your reply' });
+    await user.clear(box);
+    await user.type(box, 'Don’t worry, she will settle in quickly.');
+    await user.click(screen.getByRole('button', { name: 'Send' }));
+    expect(await screen.findByText(/You fixed it: “will”, “in”/)).toBeInTheDocument();
+    const marks = [...screen.getByRole('list', { name: 'Conversation so far' }).querySelectorAll('mark')].map((m) => m.textContent);
+    expect(marks).toContain('(improved: will)');
+    expect(marks).toContain('(improved: in)');
+
+    // Finish the role-play: the summary shows the line under "You Improved".
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
+    for (let i = 2; i <= 6; i++) {
+      await screen.findByText(`Response ${i} of 6`);
+      await speak(user, 'Thank you ma’am, I will check today itself.');
+      await user.click(await screen.findByRole('button', { name: 'Continue' }));
+    }
+    await act(async () => {
+      await router.navigate('/moments/morning-greeting/summary');
+    });
+    const improved = await screen.findByRole('region', { name: 'You Improved' });
+    expect(improved).toHaveTextContent('On another try');
+    expect(improved).toHaveTextContent(/Before:\s*Don’t worry, she \(mistake: settle\) quickly\./);
+    expect(improved).toHaveTextContent(/Now:\s*Don’t worry, she \(improved: will\) settle \(improved: in\) quickly\./);
   });
 
   it('the first chat never shows marks and returns home at the end', async () => {

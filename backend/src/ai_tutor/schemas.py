@@ -109,6 +109,8 @@ class ReplyOut(Camel):
     feedback: Feedback
     attempt: int
     typed: bool = False
+    # After "Say it again": the words she now says right that she slipped on last attempt
+    improved: list[str] = []
 
 
 class RunOut(Camel):
@@ -195,6 +197,17 @@ class SnowflakesOut(Camel):
     week: int
 
 
+class ImprovedItem(Camel):
+    """A line she got right after slipping on it: on another try, or since her last run."""
+
+    turn_id: str
+    when: Literal["again", "last_time"]
+    before: str  # what she said then
+    before_wrongs: list[str]  # the slips in it (to underline)
+    after: str  # what she said now
+    words: list[str]  # the words she fixed (to highlight)
+
+
 class SummaryOut(Camel):
     moment_id: str
     title: str
@@ -204,6 +217,7 @@ class SummaryOut(Camel):
     practise: list[PractiseItem]
     previous_practise_count: int | None
     snowflakes: SnowflakesEarned | None = None
+    improved: list[ImprovedItem] = []
 
 
 class StartRunIn(Camel):

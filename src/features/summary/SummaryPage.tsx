@@ -15,7 +15,7 @@ import { ChartIcon, CheckIcon, LockOpenIcon } from '@/components/ui/Icons';
 import { Pill } from '@/components/ui/Pill';
 import { SaveLineButton } from '@/components/ui/SaveLineButton';
 import { SpeakerButton } from '@/components/ui/SpeakerButton';
-import { CategoryBadge, SaidTry } from '@/features/conversation/ChatBubbles';
+import { CategoryBadge, HighlightedText, SaidTry } from '@/features/conversation/ChatBubbles';
 import { groupSlips, slipsOf } from '@/lib/slips';
 import type { JustFinishedState } from '@/features/conversation/useConversation';
 import { SnowflakeReward } from './SnowflakeReward';
@@ -53,6 +53,7 @@ export default function SummaryPage() {
         <main className="flex flex-1 flex-col px-5 pt-4 pb-[max(env(safe-area-inset-bottom),20px)]">
           <SummaryHero summary={summary.data} justFinished={justFinished} firstName={progress.data?.learner.firstName ?? ''} />
           {justFinished && summary.data.snowflakes && <SnowflakeReward snowflakes={summary.data.snowflakes} />}
+          <ImprovedList summary={summary.data} />
           <PractiseList summary={summary.data} />
 
           <div className="mt-3 flex gap-3">
@@ -111,6 +112,44 @@ function SummaryHero({ summary, justFinished, firstName }: { summary: Summary; j
         </>
       )}
     </HeroCard>
+  );
+}
+
+/** Lines she got right after slipping on them, with what she fixed in green: her progress. */
+function ImprovedList({ summary }: { summary: Summary }) {
+  const items = summary.improved ?? [];
+  if (!items.length) return null;
+  return (
+    <section aria-labelledby="improved-heading" className="mt-3 animate-rise rounded-[26px] border-2 border-ok-dot/60 bg-surface px-4 pt-3.5 pb-4">
+      <div className="flex items-center gap-3">
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-ok-bg text-ok" aria-hidden="true">
+          <CheckIcon size={17} strokeWidth={3} />
+        </span>
+        <div>
+          <h2 id="improved-heading" className="text-[16px] font-bold">
+            {t.summary.improvedTitle}
+          </h2>
+          <p className="text-[13px] leading-[18px] text-ink-2">{t.summary.improvedIntro}</p>
+        </div>
+      </div>
+      <ul className="mt-3 flex flex-col gap-2.5">
+        {items.map((item) => (
+          <li key={`${item.turnId}:${item.when}`} className="rounded-[20px] bg-ok-bg/50 px-3 py-2.5">
+            <p className="text-[11.5px] font-extrabold tracking-wide text-ok uppercase">
+              {item.when === 'again' ? t.summary.improvedAgain : t.summary.improvedLastTime}
+            </p>
+            <p className="mt-1 text-[13.5px] leading-snug text-ink-2">
+              <span className="mr-1.5 text-[11.5px] font-extrabold tracking-wide uppercase">{t.summary.before}</span>
+              <HighlightedText text={item.before} phrases={item.beforeWrongs} underline />
+            </p>
+            <p className="mt-1 text-[15.5px] leading-snug font-bold text-ink">
+              <span className="mr-1.5 text-[11.5px] font-extrabold tracking-wide text-ok uppercase">{t.summary.now}</span>
+              <HighlightedText text={item.after} improved={item.words} />
+            </p>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 

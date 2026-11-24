@@ -16,6 +16,7 @@ from ..models import Learner, Moment, Reply, Run, Turn
 from ..schemas import (
     Feedback,
     GrammarFix,
+    ImprovedItem,
     LearnerOut,
     MomentProgress,
     MomentRef,
@@ -32,6 +33,7 @@ from . import programme as prog
 from . import snowflakes as sf
 from .content import published_moments
 from .evaluator import EvaluationUnavailable, Evaluator, LineContext
+from .improve import improved_words
 
 
 @dataclass
@@ -61,9 +63,24 @@ def slips_of(raw: object) -> list[Slip]:
     return out
 
 
-def reply_out(r: Reply) -> ReplyOut:
+def slip_pairs(r: Reply) -> list[tuple[str, str]]:
+    """Every slip in a stored reply as (wrong, better)."""
+    if not r.fix_better:
+        return []
+    return [(r.fix_wrong or "", r.fix_better), *((m.wrong, m.better) for m in slips_of(r.more_fixes))]
+
+
+def improved_since(before: Reply | None, after: Reply) -> list[str]:
+    """Words she fixed in `after` that were slips in `before` (an earlier try at the same line)."""
+    if before is None or not (pairs := slip_pairs(before)):
+        return []
+    return improved_words(before.transcript, pairs, after.transcript)
+
+
+def reply_out(r: Reply, previous: Reply | None = None) -> ReplyOut:
     fix = GrammarFix(wrong=r.fix_wrong or "", better=r.fix_better) if r.fix_better else None
     return ReplyOut(
+        improved=improved_since(previous, r),
         id=r.id,
         turn_id=r.turn_id,
         transcript=r.transcript,
@@ -163,7 +180,11 @@ class Journey:
     def to_run(m: Moment, run: Run) -> RunOut:
         view = RunView(run)
         turns = prog.run_turns(m, run)
-        replies = [reply_out(r) for t in turns if (r := view.latest(t.id))]
+        replies = [
+            reply_out(r, a[-2] if len(a := view.attempts(t.id)) > 1 else None)
+            for t in turns
+            if (r := view.latest(t.id))
+        ]
         turn_index = min(run.turn_index, len(turns) - 1)  # scripts can shrink in the console
         return RunOut(
             moment_id=m.id,
@@ -297,6 +318,32 @@ class Journey:
             return items
 
         previous = [r for r in done[:-1] if r.kind == latest.kind]
+
+        def improvements() -> list[ImprovedItem]:
+            """Lines she got right after slipping: on another try in this run, or since last run."""
+            items: list[ImprovedItem] = []
+            now, then = RunView(latest), RunView(previous[-1]) if previous else None
+            for t in prog.run_turns(m, latest):
+                first, last = now.first(t.id), now.latest(t.id)
+                if not first or not last:
+                    continue
+                before, when = (first, "again") if last.attempt > 1 and slip_pairs(first) else (None, "")
+                if before is None and then is not None:
+                    before, when, last = then.first(t.id), "last_time", first
+                if before is None or not (words := improved_since(before, last)):
+                    continue
+                items.append(
+                    ImprovedItem(
+                        turn_id=t.id,
+                        when=when,
+                        before=before.transcript,
+                        before_wrongs=[w for w, _ in slip_pairs(before) if w],
+                        after=last.transcript,
+                        words=words,
+                    )
+                )
+            return items
+
         return SummaryOut(
             moment_id=m.id,
             title=m.title,
@@ -306,6 +353,7 @@ class Journey:
             practise=fixes(latest),
             previous_practise_count=len(fixes(previous[-1])) if previous else None,
             snowflakes=await self._snowflakes(latest),
+            improved=improvements(),
         )
 
     async def _snowflakes(self, run: Run) -> SnowflakesEarned:
@@ -408,6 +456,7 @@ class Journey:
         except EvaluationUnavailable:
             raise HTTPException(status.HTTP_502_BAD_GATEWAY, "Couldn’t check that reply. Please try again.") from None
         attempt = len(RunView(run).attempts(turn.id)) + 1
+        previous = RunView(run).latest(turn.id)
         tip = result.tip if result.fix else None
         category = (result.category or "grammar") if result.fix else None
         out = ReplyOut(
@@ -451,6 +500,7 @@ class Journey:
         run.updated_at = utcnow()
         await self.db.flush()
         out.id = row.id
+        out.improved = improved_since(previous, row)
         if m.kind != "baseline":
             await prog.mark_practised(self.db, self.learner, self.today())
         # Her audio was only sent to Gemini to be checked; it is never stored — just the transcript.
