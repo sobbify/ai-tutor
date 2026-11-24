@@ -1,11 +1,11 @@
-import { memo, type CSSProperties } from 'react';
-import { Link } from 'react-router';
-import { t } from '@/i18n';
-import { cn } from '@/lib/cn';
-import type { MomentProgress } from '@/types/tutor';
-import { CheckIcon, LockIcon, MicIcon } from '@/components/ui/Icons';
-import { Face } from '@/features/conversation/Portrait';
-import { buildPath, type PathNode, type PathUnit } from './path';
+import { memo, type CSSProperties } from "react";
+import { Link } from "react-router";
+import { t } from "@/i18n";
+import { cn } from "@/lib/cn";
+import type { MomentProgress } from "@/types/tutor";
+import { CheckIcon, LockIcon, MicIcon } from "@/components/ui/Icons";
+import { Face } from "@/features/conversation/Portrait";
+import { buildPath, type PathNode, type PathUnit } from "./path";
 
 /**
  * The 3-week programme as a Duolingo-style path: a coloured banner per week, chunky round steps
@@ -19,11 +19,16 @@ interface Palette {
   tagDark: string; // START tag text on the dark surface (passes AA)
 }
 
-const BLUE: Palette = { fill: '#1f92fc', lip: '#1574cc', banner: '#126bc0', tagDark: '#5cb0ff' };
+const BLUE: Palette = {
+  fill: "#1f92fc",
+  lip: "#1574cc",
+  banner: "#126bc0",
+  tagDark: "#5cb0ff",
+};
 const WEEK_COLOURS: Palette[] = [
   BLUE,
-  { fill: '#7c45d6', lip: '#5a2fa6', banner: '#6b38c4', tagDark: '#b590f5' },
-  { fill: '#e0336f', lip: '#b0204f', banner: '#c8285e', tagDark: '#ff86ad' },
+  { fill: "#7c45d6", lip: "#5a2fa6", banner: "#6b38c4", tagDark: "#b590f5" },
+  { fill: "#e0336f", lip: "#b0204f", banner: "#c8285e", tagDark: "#ff86ad" },
 ];
 
 /** Horizontal wiggle of the path, in px from the centre line (repeats). */
@@ -31,37 +36,75 @@ const WEEK_COLOURS: Palette[] = [
 const WIGGLE = [0, 0.68, 1, 0.68, 0, -0.68, -1, -0.68];
 /**
  * The widest swing shrinks on narrow phones so captions and ELSA always fit:
- * 82px from a 412px-wide path, down to 40px on a 360px phone (cqw = path width).
+ * 82px from a 432px-wide path, down to 30px on a 360px phone (cqw = path width).
  */
-const SWING = 'clamp(0px, 50cqw - 124px, 82px)';
-const ELSA = { name: 'ELSA', role: 'Coach', initials: 'EL', posterUrl: null };
+const SWING = "clamp(0px, 50cqw - 134px, 82px)";
+const ELSA = { name: "ELSA", role: "Coach", initials: "EL", posterUrl: null };
 
-export const ProgrammePath = memo(function ProgrammePath({ moments, daysPractised }: { moments: MomentProgress[]; daysPractised: number }) {
+export const ProgrammePath = memo(function ProgrammePath({
+  moments,
+  daysPractised,
+}: {
+  moments: MomentProgress[];
+  daysPractised: number;
+}) {
   const units = buildPath(moments, daysPractised);
-  const allDone = units.every((u) => u.nodes.every((n) => n.state === 'done'));
+  const allDone = units.every((u) => u.nodes.every((n) => n.state === "done"));
   let index = 0;
   return (
-    <section aria-label={t.path.label} className="mt-2 flex flex-col gap-7 px-4 pb-4">
+    <section
+      aria-label={t.path.label}
+      className="mt-2 flex flex-col gap-7 px-4 pb-4"
+    >
       {units.map((unit, u) => {
         const colours = WEEK_COLOURS[u % WEEK_COLOURS.length] ?? BLUE;
         const start = index;
         index += unit.nodes.length;
-        return <Unit key={unit.week} unit={unit} colours={colours} offset={start} finished={allDone && u === units.length - 1} />;
+        return (
+          <Unit
+            key={unit.week}
+            unit={unit}
+            colours={colours}
+            offset={start}
+            finished={allDone && u === units.length - 1}
+          />
+        );
       })}
     </section>
   );
 });
 
-function Unit({ unit, colours, offset, finished }: { unit: PathUnit; colours: Palette; offset: number; finished: boolean }) {
+function Unit({
+  unit,
+  colours,
+  offset,
+  finished,
+}: {
+  unit: PathUnit;
+  colours: Palette;
+  offset: number;
+  finished: boolean;
+}) {
   return (
     <div>
-      <header className="flex items-center gap-3 rounded-[18px] px-4 py-3 text-white shadow-soft" style={{ background: unit.locked ? 'var(--path-locked-banner)' : colours.banner }}>
+      <header
+        className="flex items-center gap-3 rounded-[18px] px-4 py-3 text-white shadow-soft"
+        style={{
+          background: unit.locked
+            ? "var(--path-locked-banner)"
+            : colours.banner,
+        }}
+      >
         <div className="min-w-0 flex-1">
-          <p className="text-[12.5px] font-extrabold tracking-[0.08em] uppercase">{t.path.week(unit.week)}</p>
+          <p className="text-[12.5px] font-extrabold tracking-[0.08em] uppercase">
+            {t.path.week(unit.week)}
+          </p>
           <h3 className="text-[18px] leading-6 font-extrabold">{unit.title}</h3>
         </div>
         <span className="shrink-0 rounded-full bg-black/15 px-3 py-1 text-[13px] font-extrabold">
-          {unit.locked ? t.path.weekLocked : t.path.days(unit.daysDone, unit.daysTotal)}
+          {unit.locked
+            ? t.path.weekLocked
+            : t.path.days(unit.daysDone, unit.daysTotal)}
         </span>
       </header>
 
@@ -72,7 +115,13 @@ function Unit({ unit, colours, offset, finished }: { unit: PathUnit; colours: Pa
             node={node}
             colours={colours}
             x={WIGGLE[(offset + i) % WIGGLE.length] ?? 0}
-            cheer={node.state === 'current' ? 'go' : finished && node.kind === 'chest' ? 'done' : null}
+            cheer={
+              node.state === "current"
+                ? "go"
+                : finished && node.kind === "chest"
+                  ? "done"
+                  : null
+            }
           />
         ))}
       </ol>
@@ -80,22 +129,73 @@ function Unit({ unit, colours, offset, finished }: { unit: PathUnit; colours: Pa
   );
 }
 
-function Step({ node, colours, x, cheer }: { node: PathNode; colours: Palette; x: number; cheer: 'go' | 'done' | null }) {
+function Step({
+  node,
+  colours,
+  x,
+  cheer,
+}: {
+  node: PathNode;
+  colours: Palette;
+  x: number;
+  cheer: "go" | "done" | null;
+}) {
   const captionLeft = x > 0;
   const swing = `${Math.abs(x)} * ${SWING}`;
+  // The progress ring sticks out 14px around the current step, so keep labels clear of it.
+  const gap = node.state === "current" ? 22 : 12;
   const state = t.path.states[node.state] ?? node.state;
-  const name = [node.moment && node.kind !== 'learn' ? node.moment.title : null, node.label, node.sub, state].filter(Boolean).join(', ');
-  const style = { transform: `translateX(calc(${x} * ${SWING}))` } as CSSProperties;
+  const name = [
+    node.moment && node.kind !== "learn" ? node.moment.title : null,
+    node.label,
+    node.sub,
+    state,
+  ]
+    .filter(Boolean)
+    .join(", ");
+  const style = {
+    transform: `translateX(calc(${x} * ${SWING}))`,
+  } as CSSProperties;
 
-  const visual = node.kind === 'chest' ? <Chest open={node.state === 'done'} /> : <Bubble node={node} colours={colours} />;
-  const box = cn('relative flex items-center justify-center', node.kind === 'chest' ? 'size-[84px]' : 'size-[76px]');
+  const visual =
+    node.kind === "chest" ? (
+      <Chest open={node.state === "done"} />
+    ) : (
+      <Bubble node={node} colours={colours} />
+    );
+  const box = cn(
+    "relative flex justify-center",
+    node.kind === "chest"
+      ? "size-[84px] items-center"
+      : "size-[76px] items-start",
+  );
 
   return (
-    <li className={cn('relative flex w-full justify-center', node.state === 'current' && 'mt-11')} style={{ zIndex: node.state === 'current' ? 2 : 1 }}>
+    <li
+      className={cn(
+        "relative flex w-full justify-center",
+        node.state === "current" && "mt-12",
+      )}
+      style={{ zIndex: node.state === "current" ? 2 : 1 }}
+    >
       <div className="relative" style={style}>
-        {node.state === 'current' && <StartTag colours={colours} label={node.moment?.status === 'in_progress' ? t.path.continue : t.path.start} />}
+        {node.state === "current" && (
+          <StartTag
+            colours={colours}
+            label={
+              node.moment?.status === "in_progress"
+                ? t.path.continue
+                : t.path.start
+            }
+          />
+        )}
         {node.to ? (
-          <Link viewTransition to={node.to} aria-label={name} className={cn(box, 'group rounded-full')}>
+          <Link
+            viewTransition
+            to={node.to}
+            aria-label={name}
+            className={cn(box, "group rounded-full")}
+          >
             {visual}
           </Link>
         ) : (
@@ -105,16 +205,35 @@ function Step({ node, colours, x, cheer }: { node: PathNode; colours: Palette; x
         )}
         <span
           aria-hidden="true"
-          style={{ width: `min(150px, calc(50cqw + ${swing} - 52px))` }}
+          style={{
+            width: `min(150px, calc(50cqw + ${swing} - ${gap + 40}px))`,
+            [captionLeft ? "right" : "left"]: `calc(100% + ${gap}px)`,
+          }}
           className={cn(
-            'absolute top-1/2 -translate-y-1/2 leading-tight',
-            captionLeft ? 'right-[calc(100%+12px)] text-right' : 'left-[calc(100%+12px)] text-left',
+            "absolute top-1/2 -translate-y-1/2 leading-tight",
+            captionLeft ? "text-right" : "text-left",
           )}
         >
-          <span className={cn('block text-[14.5px] font-extrabold', node.state === 'locked' ? 'text-ink-2' : 'text-ink')}>{node.label}</span>
-          {node.sub && <span className="mt-0.5 block text-[12.5px] font-semibold text-ink-2">{node.sub}</span>}
+          <span
+            className={cn(
+              "block text-[14.5px] font-extrabold",
+              node.state === "locked" ? "text-ink-2" : "text-ink",
+            )}
+          >
+            {node.label}
+          </span>
+          {node.sub && (
+            <span className="mt-0.5 block text-[12.5px] font-semibold text-ink-2">
+              {node.sub}
+            </span>
+          )}
         </span>
-        {cheer && <Cheer side={captionLeft ? 'right' : 'left'} done={cheer === 'done'} />}
+        {cheer && (
+          <Cheer
+            side={captionLeft ? "right" : "left"}
+            done={cheer === "done"}
+          />
+        )}
       </div>
     </li>
   );
@@ -122,33 +241,59 @@ function Step({ node, colours, x, cheer }: { node: PathNode; colours: Palette; x
 
 /** A chunky round step with a 3D lip, like Duolingo's lesson buttons. */
 function Bubble({ node, colours }: { node: PathNode; colours: Palette }) {
-  const lit = node.state === 'done' || node.state === 'current';
-  const Icon = node.kind === 'learn' ? BookStep : MicIcon;
-  const r = 44;
+  const lit = node.state === "done" || node.state === "current";
+  const Icon = node.kind === "learn" ? BookStep : MicIcon;
+  const r = 47;
   const ring = 2 * Math.PI * r;
   return (
     <>
-      {node.state === 'current' && (
-        <svg viewBox="0 0 96 96" className="pointer-events-none absolute -inset-[10px] size-[96px] -rotate-90" aria-hidden="true">
-          <circle cx="48" cy="48" r={r} fill="none" stroke="var(--path-track)" strokeWidth="7" />
+      {node.state === "current" && (
+        // Centred on the whole button (face + lip), with a clear gap all round, and it never moves.
+        <svg
+          viewBox="0 0 104 104"
+          className="pointer-events-none absolute top-1/2 left-1/2 size-[104px] -translate-1/2 -rotate-90"
+          aria-hidden="true"
+        >
+          <circle
+            cx="52"
+            cy="52"
+            r={r}
+            fill="none"
+            stroke="var(--path-track)"
+            strokeWidth="7"
+          />
           {node.progress > 0 && (
-            <circle cx="48" cy="48" r={r} fill="none" stroke={colours.fill} strokeWidth="7" strokeLinecap="round" strokeDasharray={`${ring * node.progress} ${ring}`} />
+            <circle
+              cx="52"
+              cy="52"
+              r={r}
+              fill="none"
+              stroke={colours.fill}
+              strokeWidth="7"
+              strokeLinecap="round"
+              strokeDasharray={`${ring * node.progress} ${ring}`}
+            />
           )}
         </svg>
       )}
       <span
-        className="relative flex size-[70px] items-center justify-center rounded-full transition-transform duration-100 group-hover:-translate-y-0.5 group-active:translate-y-[5px]"
-        style={{
-          background: lit ? colours.fill : 'var(--path-off)',
-          boxShadow: `0 6px 0 ${lit ? colours.lip : 'var(--path-off-lip)'}`,
-          color: lit ? '#fff' : 'var(--path-off-ink)',
-        }}
+        className="relative flex size-[70px] items-center justify-center rounded-full shadow-[0_6px_0_var(--lip)] transition-[translate,box-shadow,filter] duration-100 group-hover:brightness-105 group-active:translate-y-[6px] group-active:shadow-[0_0_0_var(--lip)]"
+        style={
+          {
+            background: lit ? colours.fill : "var(--path-off)",
+            "--lip": lit ? colours.lip : "var(--path-off-lip)",
+            color: lit ? "#fff" : "var(--path-off-ink)",
+          } as CSSProperties
+        }
       >
         {/* a soft highlight, like a glossy button */}
-        <span className="absolute top-2 left-1/2 h-3 w-8 -translate-x-1/2 rounded-full bg-white/25" aria-hidden="true" />
-        {node.state === 'done' ? (
+        <span
+          className="absolute top-2 left-1/2 h-3 w-8 -translate-x-1/2 rounded-full bg-white/25"
+          aria-hidden="true"
+        />
+        {node.state === "done" ? (
           <CheckIcon size={34} strokeWidth={3.4} />
-        ) : node.state === 'locked' ? (
+        ) : node.state === "locked" ? (
           <LockIcon size={28} strokeWidth={2.6} />
         ) : (
           <Icon size={30} strokeWidth={2.6} />
@@ -158,9 +303,25 @@ function Bubble({ node, colours }: { node: PathNode; colours: Palette }) {
   );
 }
 
-function BookStep({ size = 24, strokeWidth = 2 }: { size?: number; strokeWidth?: number }) {
+function BookStep({
+  size = 24,
+  strokeWidth = 2,
+}: {
+  size?: number;
+  strokeWidth?: number;
+}) {
   return (
-    <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
       <path d="M12 6.5C10.3 5 7.9 4.5 4 4.5v13c3.9 0 6.3.5 8 2 1.7-1.5 4.1-2 8-2v-13c-3.9 0-6.3.5-8 2Z" />
       <path d="M12 6.5v13" />
     </svg>
@@ -170,12 +331,25 @@ function BookStep({ size = 24, strokeWidth = 2 }: { size?: number; strokeWidth?:
 /** "Start" speech bubble that bobs above the next step. */
 function StartTag({ colours, label }: { colours: Palette; label: string }) {
   return (
-    <span className="path-bob pointer-events-none absolute bottom-[calc(100%+14px)] left-1/2 z-10 -translate-x-1/2" aria-hidden="true">
-      <span className="path-tag relative block rounded-[12px] border-2 bg-surface px-3.5 py-1.5 text-[14px] font-extrabold tracking-wide whitespace-nowrap uppercase shadow-soft"
-        style={{ borderColor: 'var(--color-line)', '--tag': colours.banner, '--tag-dark': colours.tagDark } as CSSProperties}
+    <span
+      className="path-bob pointer-events-none absolute bottom-[calc(100%+20px)] left-1/2 z-10 -translate-x-1/2"
+      aria-hidden="true"
+    >
+      <span
+        className="path-tag relative block rounded-[12px] border-2 bg-surface px-3.5 py-1.5 text-[14px] font-extrabold tracking-wide whitespace-nowrap uppercase shadow-soft"
+        style={
+          {
+            borderColor: "var(--color-line)",
+            "--tag": colours.banner,
+            "--tag-dark": colours.tagDark,
+          } as CSSProperties
+        }
       >
         {label}
-        <span className="absolute top-full left-1/2 size-3 -translate-x-1/2 -translate-y-[5px] rotate-45 border-r-2 border-b-2 bg-surface" style={{ borderColor: 'var(--color-line)' }} />
+        <span
+          className="absolute top-full left-1/2 size-3 -translate-x-1/2 -translate-y-[5px] rotate-45 border-r-2 border-b-2 bg-surface"
+          style={{ borderColor: "var(--color-line)" }}
+        />
       </span>
     </span>
   );
@@ -184,18 +358,32 @@ function StartTag({ colours, label }: { colours: Palette; label: string }) {
 /** The week's reward: a treasure chest, opened (with sparkles) once the week is done. */
 function Chest({ open }: { open: boolean }) {
   return (
-    <svg viewBox="0 0 84 84" className={cn('size-[84px] transition-transform group-hover:-translate-y-0.5', !open && 'dim-chest')} aria-hidden="true">
+    <svg
+      viewBox="0 0 84 84"
+      className={cn(
+        "size-[84px] transition-transform group-hover:-translate-y-0.5",
+        !open && "dim-chest",
+      )}
+      aria-hidden="true"
+    >
       <ellipse cx="42" cy="74" rx="26" ry="5" fill="rgb(0 0 0 / 0.12)" />
       {open ? (
         <>
-          <path d="M14 34 L42 22 L70 34 L70 38 L14 38Z" fill="#9b5a2a" transform="rotate(-18 14 36) translate(-2 -6)" />
+          <path
+            d="M14 34 L42 22 L70 34 L70 38 L14 38Z"
+            fill="#9b5a2a"
+            transform="rotate(-18 14 36) translate(-2 -6)"
+          />
           <rect x="16" y="38" width="52" height="32" rx="6" fill="#b86b32" />
           <rect x="16" y="38" width="52" height="8" fill="#ffd34d" />
           <circle cx="30" cy="36" r="5" fill="#ffd34d" />
           <circle cx="42" cy="33" r="6" fill="#ffe27a" />
           <circle cx="54" cy="36" r="5" fill="#ffd34d" />
           <rect x="38" y="46" width="8" height="10" rx="2" fill="#ffd34d" />
-          <path d="M20 16l2 4 4 2-4 2-2 4-2-4-4-2 4-2Z M64 12l1.6 3.4 3.4 1.6-3.4 1.6L64 22l-1.6-3.4L59 17l3.4-1.6Z" fill="#ffc83d" />
+          <path
+            d="M20 16l2 4 4 2-4 2-2 4-2-4-4-2 4-2Z M64 12l1.6 3.4 3.4 1.6-3.4 1.6L64 22l-1.6-3.4L59 17l3.4-1.6Z"
+            fill="#ffc83d"
+          />
         </>
       ) : (
         <>
@@ -204,7 +392,12 @@ function Chest({ open }: { open: boolean }) {
           <rect x="16" y="36" width="52" height="7" fill="#e0a34a" />
           <rect x="36" y="40" width="12" height="14" rx="3" fill="#ffd34d" />
           <circle cx="42" cy="47" r="2.2" fill="#9b5a2a" />
-          <path d="M22 44v22M62 44v22" stroke="#9b5a2a" strokeWidth="3" strokeLinecap="round" />
+          <path
+            d="M22 44v22M62 44v22"
+            stroke="#9b5a2a"
+            strokeWidth="3"
+            strokeLinecap="round"
+          />
         </>
       )}
     </svg>
@@ -212,16 +405,22 @@ function Chest({ open }: { open: boolean }) {
 }
 
 /** ELSA beside the path, cheering her on. */
-function Cheer({ side, done }: { side: 'left' | 'right'; done: boolean }) {
+function Cheer({ side, done }: { side: "left" | "right"; done: boolean }) {
   return (
     <span
       aria-hidden="true"
-      className={cn('pointer-events-none absolute top-1/2 flex -translate-y-1/2 flex-col items-center gap-1', side === 'left' ? 'right-[calc(100%+8px)]' : 'left-[calc(100%+8px)]')}
+      className={cn(
+        "pointer-events-none absolute top-1/2 flex -translate-y-1/2 flex-col items-center gap-1",
+        side === "left" ? "right-[calc(100%+18px)]" : "left-[calc(100%+18px)]",
+      )}
     >
       <span className="w-[72px] rounded-[12px] border-2 border-line bg-surface px-1 py-1 text-center text-[11.5px] leading-[14px] font-extrabold text-ink shadow-soft">
         {done ? t.path.cheerDone : t.path.cheer}
       </span>
-      <Face character={ELSA} className="size-12 overflow-hidden rounded-full border-[3px] border-surface shadow-soft" />
+      <Face
+        character={ELSA}
+        className="size-12 overflow-hidden rounded-full border-[3px] border-surface shadow-soft"
+      />
     </span>
   );
 }
