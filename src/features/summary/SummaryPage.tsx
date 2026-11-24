@@ -152,7 +152,7 @@ function PractiseList({ summary }: { summary: Summary }) {
                         {t.summary.youSaid} {slip.transcript}. {t.summary.better} “{slip.better}”{slip.tip ? ` ${t.conversation.tip}: ${slip.tip}` : ''}
                       </p>
                       <div aria-hidden="true">
-                        <SaidTry transcript={slip.transcript} fix={slip} tip={slip.tip} compact />
+                        <SaidTry transcript={slip.transcript} fix={slip} tip={slip.tip} compact condensed={slips.length > 1} />
                       </div>
                     </div>
                     <span className="flex shrink-0 flex-col gap-1.5">

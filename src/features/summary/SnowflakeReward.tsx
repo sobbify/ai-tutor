@@ -31,15 +31,16 @@ export function SnowflakeReward({ snowflakes }: { snowflakes: SnowflakesEarned }
       <h2 id="snowflake-reward" className="bg-[#126bc0] px-4 py-1.5 text-center text-[13px] font-extrabold tracking-[0.08em] text-white uppercase">
         {t.snowflakes.earnedLabel(snowflakes.earned)}
       </h2>
-      <div className="flex items-center gap-3 px-4 py-3">
+      <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 px-4 py-3">
         <span className="flex items-center gap-1.5" aria-hidden="true">
           <Snowflake size={40} className="animate-pop" />
           <span className="text-[34px] leading-none font-extrabold text-action tabular-nums">{t.snowflakes.earned(shown)}</span>
         </span>
-        <ul className="min-w-0 flex-1 space-y-0.5 text-[13.5px] leading-5 font-semibold text-ink-2">
+        {/* Reasons never wrap: on a narrow phone the list moves under the number instead. */}
+        <ul className="min-w-[200px] flex-1 space-y-0.5 text-[13.5px] leading-5 font-semibold text-ink-2">
           {snowflakes.items.map((item) => (
-            <li key={item.kind} className="flex justify-between gap-2">
-              <span className="truncate">{t.snowflakes.items[item.kind] ?? item.kind}</span>
+            <li key={item.kind} className="flex items-baseline justify-between gap-3 whitespace-nowrap">
+              <span>{t.snowflakes.items[item.kind] ?? item.kind}</span>
               <span className="font-extrabold text-ink tabular-nums">{t.snowflakes.earned(item.amount)}</span>
             </li>
           ))}

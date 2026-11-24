@@ -1,7 +1,7 @@
 import { memo, type ReactNode } from 'react';
 import { t } from '@/i18n';
 import { cn } from '@/lib/cn';
-import { closestSentence, closestSpan, diffWords } from '@/lib/wordDiff';
+import { changeAnchor, closestSentence, closestSpan, condenseDiff, diffWords } from '@/lib/wordDiff';
 import { groupSlips, slipsOf, type SlipView } from '@/lib/slips';
 import type { Character, GrammarFix, Reply } from '@/types/tutor';
 import { CheckIcon } from '@/components/ui/Icons';
@@ -83,7 +83,7 @@ export function SlipList({
             return (
               <div key={key} className="flex items-start gap-2 border-l-[3px] border-[#c8285e]/40 pl-2.5">
                 <div className="min-w-0 flex-1">
-                  <SaidTry transcript={transcript} fix={slip} tip={slip.tip} compact />
+                  <SaidTry transcript={transcript} fix={slip} tip={slip.tip} compact condensed />
                 </div>
                 {actions?.(slip.better, key)}
               </div>
@@ -118,7 +118,20 @@ export function CategoryBadge({ category, className }: { category: string | null
  * "You said → Try", word by word: in her sentence the words that change are struck through in red;
  * in the better sentence the new words are bold on green. Shared by the live card and the chat.
  */
-export function SaidTry({ transcript, fix, tip, compact = false }: { transcript: string; fix: GrammarFix; tip?: string | null; compact?: boolean }) {
+export function SaidTry({
+  transcript,
+  fix,
+  tip,
+  compact = false,
+  condensed = false,
+}: {
+  transcript: string;
+  fix: GrammarFix;
+  tip?: string | null;
+  compact?: boolean;
+  /** In a list of several fixes: show just a few words around each change (the full line is spoken). */
+  condensed?: boolean;
+}) {
   const said = closestSpan(closestSentence(transcript, fix.better), fix.better);
   const diff = diffWords(said, fix.better);
   // A whole new sentence (not a small fix) reads better plain than covered in marks.
@@ -128,6 +141,9 @@ export function SaidTry({ transcript, fix, tip, compact = false }: { transcript:
   if (rewrite) {
     diff.said = [{ text: said, changed: false }];
     diff.better = [{ text: fix.better, changed: false }];
+  } else if (condensed) {
+    diff.said = condenseDiff(diff.said, 3, 12, changeAnchor(diff.better));
+    diff.better = condenseDiff(diff.better);
   }
   return (
     <div className={cn('flex flex-col', compact ? 'gap-1' : 'gap-1.5')}>
@@ -290,16 +306,16 @@ export const CorrectionCard = memo(function CorrectionCard({
         <div className="flex min-w-0 items-center gap-2">
           {fix ? (
             <>
-              <h3 className="text-[14px] font-extrabold text-action">{many ? t.conversation.grammarFixes(slips.length) : t.conversation.grammarFix}</h3>
+              <h2 className="text-[14px] font-extrabold text-action">{many ? t.conversation.grammarFixes(slips.length) : t.conversation.grammarFix}</h2>
               {!many && <CategoryBadge category={slips[0]?.category} />}
             </>
           ) : (
-            <h3 className="flex items-center gap-1.5 text-[15px] font-extrabold text-ok">
+            <h2 className="flex items-center gap-1.5 text-[15px] font-extrabold text-ok">
               <span className="flex size-6 animate-pop items-center justify-center rounded-full bg-ok-bg">
                 <CheckIcon size={14} strokeWidth={3} />
               </span>
               {t.conversation.wellSaidTitle}
-            </h3>
+            </h2>
           )}
         </div>
         <button

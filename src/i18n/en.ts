@@ -31,7 +31,7 @@ export const en = {
     intro: 'Your private English speaking coach for real moments with parents.',
     promises: [
       { title: 'Only you see your practice', body: 'Your centre head and colleagues never see your sessions or mistakes.' },
-      { title: 'A coach, not an examiner', body: 'One small tip at a time. No marks, no rankings, and we never judge your accent.' },
+      { title: 'A coach, not an examiner', body: 'Kind tips, one change at a time. No marks or scores, and we never judge your accent.' },
       { title: 'Fits your school day', body: 'About 15 minutes a day. Even 3 minutes helps — progress saves after every step.' },
     ],
     consentLabel: 'I understand how ELSA works and I agree to practise with it.',

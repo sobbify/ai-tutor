@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { closestSentence, closestSpan, diffWords } from './wordDiff';
+import { changeAnchor, closestSentence, closestSpan, condenseDiff, diffWords } from './wordDiff';
 
 const changed = (parts: { text: string; changed: boolean }[]) => parts.filter((p) => p.changed).map((p) => p.text.trim());
 
@@ -31,5 +31,22 @@ describe('diffWords', () => {
     // A word the fix removes inside the same clause is still shown.
     expect(closestSpan('The Ria is happy today.', 'Ria is happy today.')).toBe('The Ria is happy today.');
     expect(closestSpan('Yes ma’am, she use full sentences now.', 'Yes, she uses full sentences now.')).toBe('Yes ma’am, she use full sentences now.');
+  });
+
+  it('condenses a long sentence to a few words around its one change', () => {
+    const said = 'A mother asked me in morning about lunch and I said he eat well and she play nicely.';
+    const better = 'A mother asked me in morning about lunch and I said he eats well and she play nicely.';
+    const diff = diffWords(said, better);
+    const text = (parts: { text: string }[]) => parts.map((p) => p.text).join('');
+    expect(text(condenseDiff(diff.said))).toBe('… I said he eat well and she …');
+    expect(text(condenseDiff(diff.better))).toBe('… I said he eats well and she …');
+    expect(condenseDiff(diff.better).filter((p) => p.changed).map((p) => p.text.trim())).toEqual(['eats']);
+    // A fix that only adds a word: her side is cut around where it goes.
+    const added = diffWords('A mother asked me in morning about lunch and I said he eats well.', 'A mother asked me in the morning about lunch and I said he eats well.');
+    expect(text(condenseDiff(added.said, 3, 12, changeAnchor(added.better)))).toBe('… asked me in morning about lunch …');
+    expect(text(condenseDiff(added.better))).toBe('… asked me in the morning about lunch …');
+    // Short sentences stay whole.
+    const short = diffWords('She settle quickly.', 'She will settle in quickly.');
+    expect(condenseDiff(short.better)).toEqual(short.better);
   });
 });

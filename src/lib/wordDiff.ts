@@ -120,3 +120,42 @@ function dropUnrelatedClauses(sentence: string, better: string): string {
   return `${start > 0 ? '… ' : ''}${text}${end < clauses.length ? ' …' : ''}`;
 }
 
+/**
+ * In a long sentence with one small change, keep only a few words either side of it ("… said he
+ * eat well …"), so a list of several fixes stays short. Short sentences come back unchanged.
+ */
+export function condenseDiff(parts: DiffPart[], context = 3, minWords = 12, anchor?: number): DiffPart[] {
+  const words = parts.flatMap((p) => (p.text.match(/\S+\s*/g) ?? []).map((text) => ({ text, changed: p.changed })));
+  if (words.length < minWords) return parts;
+  // Nothing changed on this side (a word is only added): centre on where it goes, if known.
+  const found = words.findIndex((w) => w.changed);
+  const first = found >= 0 ? found : (anchor ?? -1);
+  if (first < 0) return parts;
+  // An added word sits between two of hers, so the context after it starts one word earlier.
+  const last = found >= 0 ? words.length - 1 - [...words].reverse().findIndex((w) => w.changed) : first - 1;
+  const start = Math.max(0, first - context);
+  const end = Math.min(words.length, last + context + 1);
+  if (start === 0 && end === words.length) return parts;
+  const out: DiffPart[] = [];
+  const push = (text: string, changed: boolean) => {
+    const prev = out[out.length - 1];
+    if (prev && prev.changed === changed) prev.text += text;
+    else out.push({ text, changed });
+  };
+  if (start > 0) push('… ', false);
+  for (const w of words.slice(start, end)) push(w.text, w.changed);
+  if (end < words.length) push(`${out.length && /\s$/.test(out[out.length - 1]?.text ?? '') ? '' : ' '}…`, false);
+  return out;
+}
+
+/** Where her sentence's words meet the first change in the fix: the number of unchanged words
+ * before it (so an added word can still be shown in context on her side). */
+export function changeAnchor(better: DiffPart[]): number | undefined {
+  let words = 0;
+  for (const part of better) {
+    if (part.changed) return words;
+    words += (part.text.match(/\S+/g) ?? []).length;
+  }
+  return undefined;
+}
+

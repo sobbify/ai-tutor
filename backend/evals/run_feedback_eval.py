@@ -63,10 +63,14 @@ def check(case: dict[str, Any], r: Evaluation) -> list[str]:
     if "fix" in e and bool(fix) != e["fix"]:
         bad.append(f"fix={'yes: ' + fix.wrong + ' → ' + fix.better if fix else 'none'}")
     if fix:
-        wrong = norm(fix.wrong)
-        if e.get("wrong_any") and not any(norm(w) in wrong or wrong in norm(w) for w in e["wrong_any"]):
+        # Since several slips are reported, the expected one may be any of them (or in "corrected").
+        wrongs = [norm(fix.wrong), *(norm(m.wrong) for m in r.more_fixes)]
+        betters = [norm(fix.better), *(norm(m.better) for m in r.more_fixes), norm(r.corrected or "")]
+        if e.get("wrong_any") and not any(
+            norm(w) in got or (got and got in norm(w)) for w in e["wrong_any"] for got in wrongs
+        ):
             bad.append(f"wrong='{fix.wrong}'")
-        if e.get("better_has") and not any(norm(b) in norm(fix.better) for b in e["better_has"]):
+        if e.get("better_has") and not any(norm(b) in got for b in e["better_has"] for got in betters):
             bad.append(f"better='{fix.better}'")
         for word in e.get("no_fix_on", []):
             if norm(word) in norm(fix.wrong):
@@ -83,6 +87,35 @@ def check(case: dict[str, Any], r: Evaluation) -> list[str]:
             bad.append("no tip")
         elif len(r.tip.split()) > 20:
             bad.append(f"tip too long ({len(r.tip.split())} words)")
+    # Several slips at once: how many, which kinds, the whole reply corrected, one change each.
+    slips = ([fix] if fix else []) + list(r.more_fixes)
+    cats = ([r.category] if fix else []) + [m.category for m in r.more_fixes]
+    if "slips_min" in e and len(slips) < e["slips_min"]:
+        bad.append(f"slips={len(slips)} (want ≥{e['slips_min']}): {[s.wrong for s in slips]}")
+    if "slips_max" in e and len(slips) > e["slips_max"]:
+        bad.append(f"slips={len(slips)} (want ≤{e['slips_max']}): {[s.wrong for s in slips]}")
+    for cat in e.get("categories_all", []):
+        if cat not in cats:
+            bad.append(f"no {cat} slip (got {cats})")
+    for text in e.get("corrected_has", []):
+        if norm(text) not in norm(r.corrected or ""):
+            bad.append(f"corrected lacks '{text}': '{r.corrected}'")
+    for word in e.get("no_fix_on", []):
+        for m in r.more_fixes:
+            if norm(word) in norm(m.wrong):
+                bad.append(f"flagged Indian-English '{word}'")
+    if e.get("each_one_change"):
+        sentences = [x for x in re.split(r"(?<=[.!?])\s+", said) if x.strip()]
+        for slip in slips:
+            words = norm(slip.better).split()
+            best = min(
+                sentences,
+                key=lambda x: -difflib.SequenceMatcher(None, norm(x).split(), words).ratio(),
+            )
+            ops = difflib.SequenceMatcher(None, norm(best).split(), words).get_opcodes()
+            changed = sum(max(i2 - i1, j2 - j1) for tag, i1, i2, j1, j2 in ops if tag != "equal")
+            if changed > 3:
+                bad.append(f"'{slip.wrong}' changes {changed} words: '{slip.better}'")
     for key in ("answered", "polite"):
         if key in e and getattr(r, key) is not e[key]:
             bad.append(f"{key}={getattr(r, key)}")
