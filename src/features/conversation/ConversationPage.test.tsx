@@ -53,7 +53,7 @@ describe('Conversation', () => {
     const card = screen.getByRole('region', { name: 'Grammar Fix' });
     expect(card).toHaveTextContent('You answered her question clearly');
     expect(card).toHaveTextContent('Tense'); // what kind of slip it was
-    expect(card).toHaveTextContent(/You said\s+Don’t worry, she settle quickly\./);
+    expect(card).toHaveTextContent(/You said\s+… she settle quickly\./); // “Don’t worry,” wasn’t the slip
     expect(card).toHaveTextContent(/Try\s+She will settle in quickly\./);
     // The slip is marked in her own words, and the new words in the fix stand out.
     expect(within(card).getByText('will', { selector: 'ins' })).toBeInTheDocument();

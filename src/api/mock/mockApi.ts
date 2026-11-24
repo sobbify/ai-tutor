@@ -635,6 +635,10 @@ export function createMockApi({ storage = safeStorage(), latencyMs = 350, onboar
     seedDemoProgress() {
       const state = onboardedState();
       state.consented = true;
+      if (baseline) {
+        // A teacher a week into the programme did the first chat long ago.
+        state.runs[baseline.id] = [{ runNumber: 1, turnIndex: 0, completed: true, kind: 'full', level: 1, replies: [], firstAttempts: {} }];
+      }
       const runsFor = (m: MockMoment, count: number, wrongFirst: string[], wrongLatest: string[]): StoredRun[] =>
         Array.from({ length: count }, (_, i) => {
           const wrong = i === count - 1 && count > 1 ? wrongLatest : wrongFirst;

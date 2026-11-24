@@ -15,7 +15,7 @@ from ..db import utcnow
 from ..deps import DB, CurrentAdmin, client_ip, current_admin, limit, state
 from ..logs import log
 from ..models import AdminSession, AdminUser, AppSetting, Learner, Moment
-from ..schemas import AdminLoginIn, AdminMeOut, Camel
+from ..schemas import UID_PATTERN, AdminLoginIn, AdminMeOut, Camel
 from ..security.passwords import hash_password, password_problem, verify_password
 from ..security.tokens import hash_token, new_token
 from ..services import admin as svc
@@ -183,15 +183,22 @@ async def learner(uid: str, db: DB) -> svc.LearnerDetail:
 
 
 class LearnerPatch(Camel):
-    name: str = Field(min_length=1, max_length=80)
+    name: str | None = Field(default=None, min_length=1, max_length=80)
+    # Her centre (groups only mix one centre). "" clears it; leave out to keep it.
+    centre: str | None = Field(default=None, max_length=64, pattern=r"^$|" + UID_PATTERN)
 
 
 @router.patch("/learners/{uid}", response_model=svc.LearnerDetail)
-async def rename_learner(uid: str, body: LearnerPatch, db: DB, admin: CurrentAdmin) -> svc.LearnerDetail:
+async def update_learner(uid: str, body: LearnerPatch, db: DB, admin: CurrentAdmin) -> svc.LearnerDetail:
     learner = await _learner(db, uid)
-    old = learner.name
-    learner.name = " ".join(body.name.split())
-    await svc.audit(db, admin, "learner.renamed", "learner", uid, before=old, after=learner.name)
+    if body.name is not None and " ".join(body.name.split()) != learner.name:
+        old = learner.name
+        learner.name = " ".join(body.name.split())
+        await svc.audit(db, admin, "learner.renamed", "learner", uid, before=old, after=learner.name)
+    if body.centre is not None and (body.centre or None) != learner.centre:
+        old_centre = learner.centre
+        learner.centre = body.centre or None  # her group stays; she can leave it in the app
+        await svc.audit(db, admin, "learner.centre_changed", "learner", uid, before=old_centre, after=learner.centre)
     return await svc.learner_detail(db, learner)
 
 

@@ -12,7 +12,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from ..db import UTC, utcnow
-from ..models import AdminUser, AppSetting, AuditLog, Learner, LearnerSession, Moment, Reply, Run, Turn
+from ..models import (
+    AdminUser,
+    AppSetting,
+    AuditLog,
+    Group,
+    GroupMember,
+    Learner,
+    LearnerSession,
+    Moment,
+    Reply,
+    Run,
+    Turn,
+)
 from ..schemas import Camel
 from .content import CONTENT_VERSION_KEY, apply_moment, file_version, load_file, moment_from_db
 from .journey import Journey
@@ -106,6 +118,8 @@ class SessionRow(Camel):
 class LearnerDetail(Camel):
     uid: str
     name: str
+    centre: str | None = None
+    group: str | None = None  # her practice group's name
     created_at: datetime
     last_seen_at: datetime
     sessions: list[SessionRow]
@@ -375,9 +389,16 @@ async def learner_detail(db: AsyncSession, learner: Learner) -> LearnerDetail:
     recent = (
         await db.execute(_reply_rows_stmt().where(Learner.id == learner.id).order_by(Reply.created_at.desc()).limit(50))
     ).all()
+    group = await db.scalar(
+        select(Group.name)
+        .join(GroupMember, GroupMember.group_id == Group.id)
+        .where(GroupMember.learner_id == learner.id)
+    )
     return LearnerDetail(
         uid=learner.uid,
         name=learner.name,
+        centre=learner.centre,
+        group=group,
         created_at=learner.created_at,
         last_seen_at=learner.last_seen_at,
         sessions=[
@@ -401,6 +422,7 @@ async def learner_export(db: AsyncSession, learner: Learner) -> dict[str, Any]:
         "learner": {
             "uid": learner.uid,
             "name": learner.name,
+            "centre": learner.centre,
             "createdAt": learner.created_at.isoformat(),
             "lastSeenAt": learner.last_seen_at.isoformat(),
         },

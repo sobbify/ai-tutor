@@ -65,14 +65,23 @@ function devSessionGate(target: string): Plugin {
   };
 }
 
-export default defineConfig(({ mode }) => {
+export default defineConfig(({ mode, command }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_');
   const apiOrigin = env.VITE_API_BASE_URL ? new URL(env.VITE_API_BASE_URL).origin : '';
   const backend = env.VITE_DEV_PROXY_TARGET || 'http://127.0.0.1:8000';
   const httpMode = env.VITE_API_MODE === 'http';
   return {
     plugins: [react(), tailwindcss(), contentSecurityPolicy(apiOrigin), ...(httpMode ? [devSessionGate(backend)] : [])],
-    resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
+    resolve: {
+      alias: [
+        // Real (http) production builds never use the demo mock API: swap it for a stub so its code
+        // and practice scripts (~40 KB) stay out of the bundle teachers download.
+        ...(command === 'build' && env.VITE_API_MODE !== 'mock'
+          ? [{ find: /^\.\/mock\/mockApi$/, replacement: fileURLToPath(new URL('./src/api/mockStub.ts', import.meta.url)) }]
+          : []),
+        { find: '@', replacement: fileURLToPath(new URL('./src', import.meta.url)) },
+      ],
+    },
     server: {
       port: 5173,
       // Forward the backend's routes in http mode. Keys starting with ^ are regexes on the URL

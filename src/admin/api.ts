@@ -123,6 +123,8 @@ export type ReplyRow = z.infer<typeof ReplyRowSchema>;
 export const LearnerDetailSchema = z.object({
   uid: z.string(),
   name: z.string(),
+  centre: z.string().nullable().default(null),
+  group: z.string().nullable().default(null),
   createdAt: date,
   lastSeenAt: date,
   sessions: z.array(z.object({ createdAt: date, lastUsedAt: date, expiresAt: date, userAgent: z.string() })),
@@ -218,7 +220,8 @@ export const adminApi = {
 
   learners: (p: { q: string; sort: LearnerSort; page: number; size: number }) => call(`/learners${qs(p)}`, pageOf(LearnerRowSchema)),
   learner: (uid: string) => call(`/learners/${encodeURIComponent(uid)}`, LearnerDetailSchema),
-  renameLearner: (uid: string, name: string) => call(`/learners/${encodeURIComponent(uid)}`, LearnerDetailSchema, json('PATCH', { name })),
+  updateLearner: (uid: string, update: { name?: string; centre?: string }) =>
+    call(`/learners/${encodeURIComponent(uid)}`, LearnerDetailSchema, json('PATCH', update)),
   resetLearner: (uid: string, momentId: string | null) =>
     call(`/learners/${encodeURIComponent(uid)}/reset`, z.object({ runsDeleted: z.number() }), json('POST', { momentId })),
   signOutLearner: (uid: string) => call(`/learners/${encodeURIComponent(uid)}/signout`, z.object({ sessionsEnded: z.number() }), json('POST')),

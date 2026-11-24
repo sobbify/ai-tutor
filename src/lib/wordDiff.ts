@@ -49,10 +49,10 @@ export function diffWords(said: string, better: string): { said: DiffPart[]; bet
       i++;
       j++;
     } else if (j < b.length && (i >= a.length || (t[i]?.[j + 1] ?? 0) >= (t[i + 1]?.[j] ?? 0))) {
-      push(right, bj, true);
+      push(right, bj, norm(bj) !== ''); // a lone "…" or dash is never a change
       j++;
     } else {
-      push(left, ai, true);
+      push(left, ai, norm(ai) !== '');
       i++;
     }
   }
@@ -82,6 +82,8 @@ export function closestSentence(transcript: string, better: string): string {
  * stretch of her words it corrects, with "…" where words were left out on either side.
  */
 export function closestSpan(sentence: string, better: string): string {
+  const trimmed = dropUnrelatedClauses(sentence, better);
+  if (trimmed !== sentence.trim()) return trimmed;
   const words = tokens(sentence);
   const target = tokens(better);
   if (words.length <= target.length + 3) return sentence.trim();
@@ -97,3 +99,24 @@ export function closestSpan(sentence: string, better: string): string {
   const text = words.slice(best.start, best.end).join('').trim();
   return `${best.start > 0 ? '… ' : ''}${text}${best.end < words.length ? ' …' : ''}`;
 }
+
+/**
+ * Leading or trailing clauses (split at , ; :) that share no word with the fix aren't part of
+ * the slip: "Don't worry, she settle quickly." → "… she settle quickly." for "She will settle in
+ * quickly." Without this the diff would strike "Don't worry," as if she shouldn't have said it.
+ * A word the fix removes inside the same clause ("The Ria is happy") is still shown.
+ */
+function dropUnrelatedClauses(sentence: string, better: string): string {
+  const clauses = sentence.trim().match(/[^,;:]+[,;:]?\s*/g) ?? [];
+  if (clauses.length < 2) return sentence.trim();
+  const target = new Set(tokens(better).map(norm).filter(Boolean));
+  const related = (c: string) => tokens(c).some((w) => target.has(norm(w)));
+  let start = 0;
+  let end = clauses.length;
+  while (start < end - 1 && !related(clauses[start] ?? '')) start++;
+  while (end - 1 > start && !related(clauses[end - 1] ?? '')) end--;
+  if (start === 0 && end === clauses.length) return sentence.trim();
+  const text = clauses.slice(start, end).join('').trim().replace(/[,;:]$/, '');
+  return `${start > 0 ? '… ' : ''}${text}${end < clauses.length ? ' …' : ''}`;
+}
+

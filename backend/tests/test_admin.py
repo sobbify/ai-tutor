@@ -100,6 +100,11 @@ def test_learner_actions_are_audited(admin: TestClient) -> None:
     assert (
         admin.patch("/api/admin/learners/t-9", json={"name": "Ravi Kumar"}, headers=CSRF).json()["name"] == "Ravi Kumar"
     )
+    # Ops can set her centre (when the host app didn't send it) and see her group.
+    detail = admin.patch("/api/admin/learners/t-9", json={"centre": "EK-PUNE-01"}, headers=CSRF).json()
+    assert detail["centre"] == "EK-PUNE-01" and detail["name"] == "Ravi Kumar" and detail["group"] is None
+    assert admin.patch("/api/admin/learners/t-9", json={"centre": "../x"}, headers=CSRF).status_code == 422
+    assert admin.patch("/api/admin/learners/t-9", json={"centre": ""}, headers=CSRF).json()["centre"] is None
     export = admin.get("/api/admin/learners/t-9/export")
     assert export.headers["content-disposition"].startswith("attachment") and len(export.json()["runs"]) == 1
     assert admin.post("/api/admin/learners/t-9/reset", json={}, headers=CSRF).json() == {"runsDeleted": 1}
@@ -111,6 +116,7 @@ def test_learner_actions_are_audited(admin: TestClient) -> None:
     actions = [a["action"] for a in admin.get("/api/admin/audit").json()["items"]]
     for expected in (
         "learner.renamed",
+        "learner.centre_changed",
         "learner.exported",
         "learner.progress_reset",
         "learner.signed_out",

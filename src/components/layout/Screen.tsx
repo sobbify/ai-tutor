@@ -16,8 +16,8 @@ export function Screen({ children, className }: { children: ReactNode; className
 /** Sticky footer for primary actions, with safe-area padding. */
 export function ScreenFooter({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div className={cn('sticky bottom-0 z-10 bg-surface px-5 pt-3 pb-[max(env(safe-area-inset-bottom),20px)]', className)}>
+    <footer className={cn('sticky bottom-0 z-10 bg-surface px-5 pt-3 pb-[max(env(safe-area-inset-bottom),20px)]', className)}>
       {children}
-    </div>
+    </footer>
   );
 }

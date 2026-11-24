@@ -10,7 +10,7 @@ import { Badge, ConfirmDialog, Empty, ErrorBox, Field, Loading, PageHeader, Pane
 import { errorMessage, fmtAgo, fmtDate, fmtDateTime } from '../format';
 import { useToasts } from '../toasts';
 
-type Dialog = 'rename' | 'reset' | 'signout' | 'delete' | null;
+type Dialog = 'edit' | 'reset' | 'signout' | 'delete' | null;
 
 export default function LearnerDetail() {
   const { uid = '' } = useParams();
@@ -20,6 +20,7 @@ export default function LearnerDetail() {
   const learner = useQuery({ queryKey: adminKeys.learner(uid), queryFn: () => adminApi.learner(uid) });
   const [dialog, setDialog] = useState<Dialog>(null);
   const [name, setName] = useState('');
+  const [centre, setCentre] = useState('');
   const [resetMoment, setResetMoment] = useState('');
 
   const done = (message: string) => {
@@ -28,7 +29,11 @@ export default function LearnerDetail() {
     void qc.invalidateQueries({ queryKey: ['admin'] });
   };
   const fail = (e: unknown) => toast(errorMessage(e), 'error');
-  const rename = useMutation({ mutationFn: () => adminApi.renameLearner(uid, name), onSuccess: () => done('Name updated'), onError: fail });
+  const edit = useMutation({
+    mutationFn: () => adminApi.updateLearner(uid, { name, centre: centre.trim() }),
+    onSuccess: () => done('Learner updated'),
+    onError: fail,
+  });
   const reset = useMutation({
     mutationFn: () => adminApi.resetLearner(uid, resetMoment || null),
     onSuccess: (r) => done(`Progress reset (${r.runsDeleted} practice runs removed)`),
@@ -60,12 +65,13 @@ export default function LearnerDetail() {
         title={l.name}
         subtitle={
           <>
-            <span className="font-mono">{l.uid}</span> · joined {fmtDate(l.createdAt)} · last active {fmtAgo(l.lastSeenAt)}
+            <span className="font-mono">{l.uid}</span> · centre {l.centre ? <span className="font-mono">{l.centre}</span> : 'not set'}
+            {l.group && <> · group “{l.group}”</>} · joined {fmtDate(l.createdAt)} · last active {fmtAgo(l.lastSeenAt)}
           </>
         }
         actions={
           <>
-            <Button size="sm" variant="outline" onClick={() => { setName(l.name); setDialog('rename'); }}>Rename</Button>
+            <Button size="sm" variant="outline" onClick={() => { setName(l.name); setCentre(l.centre ?? ''); setDialog('edit'); }}>Edit</Button>
             <Button size="sm" variant="outline" onClick={() => void download(`/learners/${encodeURIComponent(uid)}/export`, `learner-${uid}.json`).catch(fail)}>Export data</Button>
             <Button size="sm" variant="outline" onClick={() => setDialog('reset')}>Reset progress</Button>
             <Button size="sm" variant="outline" onClick={() => setDialog('signout')} disabled={l.sessions.length === 0}>Sign out</Button>
@@ -138,8 +144,11 @@ export default function LearnerDetail() {
         )}
       </Panel>
 
-      <ConfirmDialog open={dialog === 'rename'} title="Rename learner" body="The new name shows in the app next time they open it (the host app may also overwrite it)." confirmLabel="Save" busy={rename.isPending} onConfirm={() => rename.mutate()} onClose={() => setDialog(null)}>
+      <ConfirmDialog open={dialog === 'edit'} title="Edit learner" body="Changes show in the app next time they open it. The host app may overwrite the name and centre." confirmLabel="Save" busy={edit.isPending} onConfirm={() => edit.mutate()} onClose={() => setDialog(null)}>
         <Field label="Name">{(id) => <TextInput id={id} value={name} onChange={(e) => setName(e.target.value)} maxLength={80} required />}</Field>
+        <Field label="Centre ID" hint="Groups only mix teachers of one centre. Leave empty to clear.">
+          {(id, describedBy) => <TextInput id={id} aria-describedby={describedBy} value={centre} onChange={(e) => setCentre(e.target.value)} maxLength={64} className="font-mono" />}
+        </Field>
       </ConfirmDialog>
       <ConfirmDialog open={dialog === 'reset'} title="Reset progress" body="Practice runs and replies are deleted. This can’t be undone." confirmLabel="Reset" danger busy={reset.isPending} onConfirm={() => reset.mutate()} onClose={() => setDialog(null)}>
         <Field label="Which moments?">

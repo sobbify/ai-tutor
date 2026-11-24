@@ -72,6 +72,7 @@ export default function ConversationPage() {
     <Screen className="h-dvh min-h-0">
       <AppHeader title={moment.title} onBack={back} />
 
+      <main className="flex min-h-0 flex-1 flex-col">
       <div className="flex h-11 shrink-0 items-center gap-3 px-5">
         <span className="shrink-0 text-[13.5px] font-bold text-ink-2" aria-hidden="true">
           {t.conversation.responseOf(position, total)}
@@ -81,7 +82,6 @@ export default function ConversationPage() {
         <CallTimer />
       </div>
 
-      <main className="flex min-h-0 flex-1 flex-col">
         <div className="shrink-0">
           <AvatarStage
             character={moment.character}

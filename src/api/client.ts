@@ -11,7 +11,9 @@ export const apiMode: ApiMode = import.meta.env.VITE_API_MODE === 'mock' ? 'mock
  * "journey in progress" state from the design and `?demo=reset` clears it.
  */
 export function createApi(): TutorApi {
-  if (apiMode === 'http') return createHttpApi(import.meta.env.VITE_API_BASE_URL ?? '');
+  // Compared against the build-time value directly, so production builds drop the demo mock API
+  // (and its 40 KB of scripts) entirely.
+  if (import.meta.env.VITE_API_MODE !== 'mock') return createHttpApi(import.meta.env.VITE_API_BASE_URL ?? '');
 
   const mock = createMockApi();
   const demo = new URLSearchParams(window.location.search).get('demo');

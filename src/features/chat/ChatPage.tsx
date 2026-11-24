@@ -30,8 +30,9 @@ export default function ChatPage() {
         <ErrorBlock error={error} onRetry={() => void Promise.all([moment.refetch(), run.refetch()])} />
       ) : (
         <>
-          <h2 className="border-b border-line px-5 py-3.5 text-[14.5px] font-bold">{t.chat.title(moment.data.character.name)}</h2>
-          <main className="flex-1 bg-mist px-4 pt-4 pb-6">
+          <main className="flex-1 bg-mist pb-6">
+            <h2 className="border-b border-line bg-surface px-5 py-3.5 text-[14.5px] font-bold">{t.chat.title(moment.data.character.name)}</h2>
+            <div className="px-4 pt-4">
             <p className="mx-4 rounded-[26px] border border-line bg-surface px-5 py-2.5 text-center text-[13.5px] leading-5 text-ink-2">
               <b className="font-bold text-ink">{t.chat.scene}</b> {moment.data.scene}
             </p>
@@ -44,6 +45,7 @@ export default function ChatPage() {
                 ];
               })}
             </ol>
+            </div>
           </main>
           <ScreenFooter className="border-t border-line">
             <ButtonLink to={`/moments/${momentId}/summary`} state={justFinished ? { justFinished: true } : undefined} replace={justFinished} block>
