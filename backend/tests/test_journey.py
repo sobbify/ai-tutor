@@ -32,7 +32,7 @@ def test_progress_starts_with_week_one_and_anytime_open(learner: TestClient) -> 
         "small-incident": ("anytime", None, "available"),
         "celebration-day": ("anytime", None, "available"),
     }  # the first chat (baseline) is never shown as progress
-    assert body["trends"] == {"daysPractised": 0, "fillers": None, "grammarSlips": None}
+    assert body["trends"] == {"daysPractised": 0, "fillers": None, "grammarSlips": None, "linesFixed": 0}
 
 
 def test_public_moment_hides_evaluator_data_and_levels(learner: TestClient) -> None:

@@ -63,3 +63,17 @@ describe('groups (mock)', () => {
     expect((await a.getHome()).group).toMatchObject({ name: 'Sunflower Room', members: 4, weekGoal: 200 });
   });
 });
+
+describe('lines fixed (mock)', () => {
+  it('counts a line she slipped on and then said right', async () => {
+    const a = api();
+    expect((await a.getProgress()).trends.linesFixed).toBe(0);
+    let run = await a.startRun('morning-greeting');
+    const turnId = run.turnIds[0]!;
+    await a.submitReply('morning-greeting', { turnId, audio: null, transcript: 'Don’t worry, she settle quickly.' });
+    const again = await a.submitReply('morning-greeting', { turnId, audio: null, transcript: 'Don’t worry, she will settle in quickly.' });
+    expect(again.improved).toEqual(['will', 'in']);
+    run = await a.advance('morning-greeting');
+    expect((await a.getProgress()).trends.linesFixed).toBe(1);
+  });
+});

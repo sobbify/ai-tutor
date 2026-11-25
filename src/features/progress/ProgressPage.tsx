@@ -48,6 +48,7 @@ function TrendsCard({ trends }: { trends: Trends }) {
     t.progress.daysPractised(trends.daysPractised),
     trends.fillers ? t.progress.fillers[trends.fillers] : null,
     trends.grammarSlips ? t.progress.grammarSlips[trends.grammarSlips] : null,
+    trends.linesFixed > 0 ? t.progress.linesFixed(trends.linesFixed) : null,
   ].filter((x): x is string => Boolean(x));
   return (
     <section aria-labelledby="trends" className="mt-5 rounded-card bg-aqua px-4 pt-3 pb-3.5">

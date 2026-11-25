@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod/mini';
 
 // No eval/new Function: keeps the strict Content-Security-Policy (script-src 'self') clean.
 z.config({ jitless: true });
@@ -8,12 +8,12 @@ z.config({ jitless: true });
  * so a backend change can never push malformed data into the UI.
  */
 
-export const MomentIdSchema = z.string().regex(/^[a-z0-9-]{1,64}$/);
+export const MomentIdSchema = z.string().check(z.regex(/^[a-z0-9-]{1,64}$/));
 export type MomentId = z.infer<typeof MomentIdSchema>;
 
 export const HintSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('sentence'), text: z.string() }),
-  z.object({ kind: z.literal('starters'), options: z.array(z.string()).min(1) }),
+  z.object({ kind: z.literal('starters'), options: z.array(z.string()).check(z.minLength(1)) }),
 ]);
 export type Hint = z.infer<typeof HintSchema>;
 
@@ -22,9 +22,9 @@ export const TurnSchema = z.object({
   parentLine: z.string(),
   hint: HintSchema,
   /** Avatar-provider clip for this line. Null until the provider is wired in. */
-  videoUrl: z.string().url().nullable(),
+  videoUrl: z.nullable(z.url()),
   /** How the parent comes across on this line (drives the illustrated avatar's face). */
-  mood: z.enum(['calm', 'worried', 'upset']).default('calm'),
+  mood: z._default(z.enum(['calm', 'worried', 'upset']), 'calm'),
 });
 export type Turn = z.infer<typeof TurnSchema>;
 export type Mood = Turn['mood'];
@@ -32,8 +32,8 @@ export type Mood = Turn['mood'];
 export const CharacterSchema = z.object({
   name: z.string(),
   role: z.string(),
-  initials: z.string().max(3),
-  posterUrl: z.string().url().nullable(),
+  initials: z.string().check(z.maxLength(3)),
+  posterUrl: z.nullable(z.url()),
 });
 export type Character = z.infer<typeof CharacterSchema>;
 
@@ -56,14 +56,14 @@ export type Lesson = z.infer<typeof LessonSchema>;
 export const MomentSchema = z.object({
   id: MomentIdSchema,
   title: z.string(),
-  order: z.number().int().min(1),
+  order: z.int().check(z.minimum(1)),
   icon: MomentIconSchema,
   kind: MomentKindSchema,
-  week: z.number().int().min(1).max(3).nullable(),
+  week: z.nullable(z.int().check(z.minimum(1)).check(z.maximum(3))),
   scene: z.string(),
   character: CharacterSchema,
-  lesson: LessonSchema.nullable(),
-  turns: z.array(TurnSchema).min(1),
+  lesson: z.nullable(LessonSchema),
+  turns: z.array(TurnSchema).check(z.minLength(1)),
 });
 export type Moment = z.infer<typeof MomentSchema>;
 
@@ -79,45 +79,45 @@ export type GrammarFix = z.infer<typeof GrammarFixSchema>;
 export const SlipSchema = z.object({
   wrong: z.string(),
   better: z.string(),
-  tip: z.string().nullable().optional(),
-  category: z.string().nullable().optional(),
+  tip: z.optional(z.nullable(z.string())),
+  category: z.optional(z.nullable(z.string())),
 });
 export type Slip = z.infer<typeof SlipSchema>;
 
 export const FeedbackSchema = z.object({
   heard: z.boolean(),
   positives: z.array(z.string()),
-  fix: GrammarFixSchema.nullable(),
+  fix: z.nullable(GrammarFixSchema),
   /** One-line grammar micro-lesson that comes with a fix. */
-  tip: z.string().nullable().optional(),
+  tip: z.optional(z.nullable(z.string())),
   /** What kind of slip the fix is about: tense, agreement, article, preposition, … */
-  category: z.string().nullable().optional(),
+  category: z.optional(z.nullable(z.string())),
   /** Every other slip in the reply, most important first (up to 3). */
-  moreFixes: z.array(SlipSchema).optional(),
+  moreFixes: z.optional(z.array(SlipSchema)),
   /** Her whole reply with every slip fixed, when there are several. */
-  corrected: z.string().nullable().optional(),
+  corrected: z.optional(z.nullable(z.string())),
 });
 export type Feedback = z.infer<typeof FeedbackSchema>;
 
 export const ReplySchema = z.object({
   /** Null when nothing was stored (not heard). */
-  id: z.number().int().nullable().optional(),
+  id: z.optional(z.nullable(z.int())),
   turnId: z.string(),
   transcript: z.string(),
   feedback: FeedbackSchema,
-  attempt: z.number().int().min(1),
-  typed: z.boolean().optional(),
+  attempt: z.int().check(z.minimum(1)),
+  typed: z.optional(z.boolean()),
   /** After "Say it again": the words she now says right that she slipped on before. */
-  improved: z.array(z.string()).optional(),
+  improved: z.optional(z.array(z.string())),
 });
 export type Reply = z.infer<typeof ReplySchema>;
 
 export const RunSchema = z.object({
   momentId: MomentIdSchema,
-  runNumber: z.number().int().min(1),
-  turnIndex: z.number().int().min(0),
+  runNumber: z.int().check(z.minimum(1)),
+  turnIndex: z.int().check(z.minimum(0)),
   /** This run's lines, in order (they follow its hidden difficulty, or "Rehearse now"). */
-  turnIds: z.array(z.string()).min(1),
+  turnIds: z.array(z.string()).check(z.minLength(1)),
   kind: z.enum(['full', 'quick']),
   /** Latest reply per turn, in turn order. */
   replies: z.array(ReplySchema),
@@ -131,28 +131,30 @@ export type MomentStatus = z.infer<typeof MomentStatusSchema>;
 export const MomentProgressSchema = z.object({
   id: MomentIdSchema,
   title: z.string(),
-  order: z.number().int(),
+  order: z.int(),
   icon: MomentIconSchema,
   kind: MomentKindSchema,
-  week: z.number().int().nullable(),
+  week: z.nullable(z.int()),
   status: MomentStatusSchema,
-  responsesTotal: z.number().int().min(1),
+  responsesTotal: z.int().check(z.minimum(1)),
   /** Turns completed in the current (unfinished) run. */
-  responsesDone: z.number().int().min(0),
-  timesPractised: z.number().int().min(0),
+  responsesDone: z.int().check(z.minimum(0)),
+  timesPractised: z.int().check(z.minimum(0)),
   /** Per-turn grammar result (true = correct) on the first completed run, and on the latest. */
-  firstTry: z.array(z.boolean()).nullable(),
-  latest: z.array(z.boolean()).nullable(),
+  firstTry: z.nullable(z.array(z.boolean())),
+  latest: z.nullable(z.array(z.boolean())),
 });
 export type MomentProgress = z.infer<typeof MomentProgressSchema>;
 
-const TrendSchema = z.enum(['fewer', 'same', 'more']).nullable();
+const TrendSchema = z.nullable(z.enum(['fewer', 'same', 'more']));
 
 /** Gentle trends: her first sessions against her latest — never a grade. */
 export const TrendsSchema = z.object({
-  daysPractised: z.number().int().min(0),
+  daysPractised: z.int().check(z.minimum(0)),
   fillers: TrendSchema,
   grammarSlips: TrendSchema,
+  /** Lines she slipped on and later said right — her own progress, only ever counts up. */
+  linesFixed: z._default(z.int().check(z.minimum(0)), 0),
 });
 export type Trends = z.infer<typeof TrendsSchema>;
 
@@ -167,10 +169,10 @@ export const PractiseItemSchema = z.object({
   turnId: z.string(),
   transcript: z.string(),
   fix: GrammarFixSchema,
-  tip: z.string().nullable().optional(),
-  category: z.string().nullable().optional(),
-  moreFixes: z.array(SlipSchema).optional(),
-  corrected: z.string().nullable().optional(),
+  tip: z.optional(z.nullable(z.string())),
+  category: z.optional(z.nullable(z.string())),
+  moreFixes: z.optional(z.array(SlipSchema)),
+  corrected: z.optional(z.nullable(z.string())),
 });
 export type PractiseItem = z.infer<typeof PractiseItemSchema>;
 
@@ -178,15 +180,15 @@ export type PractiseItem = z.infer<typeof PractiseItemSchema>;
 
 export const SnowflakeItemSchema = z.object({
   kind: z.enum(['finished', 'quick', 'again', 'story', 'daily']),
-  amount: z.number().int().min(0),
+  amount: z.int().check(z.minimum(0)),
 });
 export type SnowflakeItem = z.infer<typeof SnowflakeItemSchema>;
 
 /** What one session earned (its end screen, like Duolingo's XP) and her week so far. */
 export const SnowflakesEarnedSchema = z.object({
-  earned: z.number().int().min(0),
+  earned: z.int().check(z.minimum(0)),
   items: z.array(SnowflakeItemSchema),
-  week: z.number().int().min(0),
+  week: z.int().check(z.minimum(0)),
 });
 export type SnowflakesEarned = z.infer<typeof SnowflakesEarnedSchema>;
 
@@ -205,14 +207,14 @@ export const SummarySchema = z.object({
   title: z.string(),
   /** True right after the first ever completion of this moment. */
   firstCompletion: z.boolean(),
-  unlocked: z.object({ id: MomentIdSchema, title: z.string() }).nullable(),
-  nextMomentId: MomentIdSchema.nullable(),
+  unlocked: z.nullable(z.object({ id: MomentIdSchema, title: z.string() })),
+  nextMomentId: z.nullable(MomentIdSchema),
   practise: z.array(PractiseItemSchema),
   /** How many sentences to practise there were on the previous run (null on the first run). */
-  previousPractiseCount: z.number().int().min(0).nullable(),
-  snowflakes: SnowflakesEarnedSchema.nullable().optional(),
+  previousPractiseCount: z.nullable(z.int().check(z.minimum(0))),
+  snowflakes: z.optional(z.nullable(SnowflakesEarnedSchema)),
   /** Lines she got right after slipping on them: on another try, or since her last run. */
-  improved: z.array(ImprovedItemSchema).optional(),
+  improved: z.optional(z.array(ImprovedItemSchema)),
 });
 export type Summary = z.infer<typeof SummarySchema>;
 
@@ -223,36 +225,33 @@ export const HomeSchema = z.object({
   consented: z.boolean(),
   baselineDone: z.boolean(),
   programme: z.object({
-    day: z.number().int().min(1),
-    totalDays: z.number().int().min(1),
-    week: z.number().int().min(1),
+    day: z.int().check(z.minimum(1)),
+    totalDays: z.int().check(z.minimum(1)),
+    week: z.int().check(z.minimum(1)),
     weekTitle: z.string(),
-    daysPractised: z.number().int().min(0),
+    daysPractised: z.int().check(z.minimum(0)),
     practisedToday: z.boolean(),
     /** Day 5 of a week: a harder role-play, and "Tell me what happened". */
     harderToday: z.boolean(),
     complete: z.boolean(),
   }),
-  streak: z.object({ days: z.number().int().min(0), practisedToday: z.boolean() }),
-  recommended: z
-    .object({ momentId: MomentIdSchema, title: z.string(), reason: z.enum(['continue', 'hardest', 'week', 'harder']) })
-    .nullable(),
+  streak: z.object({ days: z.int().check(z.minimum(0)), practisedToday: z.boolean() }),
+  recommended: z.nullable(z
+    .object({ momentId: MomentIdSchema, title: z.string(), reason: z.enum(['continue', 'hardest', 'week', 'harder']) })),
   storySuggested: z.boolean(),
   certificateEarned: z.boolean(),
-  snowflakes: z.object({ total: z.number().int().min(0), week: z.number().int().min(0) }).default({ total: 0, week: 0 }),
-  group: z
-    .object({ name: z.string(), members: z.number().int().min(1), weekTotal: z.number().int().min(0), weekGoal: z.number().int().min(0) })
-    .nullable()
-    .default(null),
+  snowflakes: z._default(z.object({ total: z.int().check(z.minimum(0)), week: z.int().check(z.minimum(0)) }), { total: 0, week: 0 }),
+  group: z._default(z.nullable(z
+    .object({ name: z.string(), members: z.int().check(z.minimum(1)), weekTotal: z.int().check(z.minimum(0)), weekGoal: z.int().check(z.minimum(0)) })), null),
   /** The PRD's group invite: once she finishes the programme, or 30 days after joining. */
-  groupInvite: z.boolean().default(false),
+  groupInvite: z._default(z.boolean(), false),
 });
 export type Home = z.infer<typeof HomeSchema>;
 
 export const PreferencesSchema = z.object({
   quietMode: z.boolean(),
-  nudgeTime: z.string().nullable(),
-  hardestMomentId: z.string().nullable(),
+  nudgeTime: z.nullable(z.string()),
+  hardestMomentId: z.nullable(z.string()),
   consented: z.boolean(),
 });
 export type Preferences = z.infer<typeof PreferencesSchema>;
@@ -272,37 +271,37 @@ export interface OnboardingInput {
 // ---- phrasebook, stories, certificate ------------------------------------------------------------
 
 export const PhraseSchema = z.object({
-  id: z.number().int(),
+  id: z.int(),
   text: z.string(),
   source: z.string(),
-  momentId: z.string().nullable(),
+  momentId: z.nullable(z.string()),
   createdAt: z.string(),
 });
 export type Phrase = z.infer<typeof PhraseSchema>;
 
 export const StorySchema = z.object({
-  id: z.number().int().nullable(),
+  id: z.nullable(z.int()),
   heard: z.boolean(),
   transcript: z.string(),
   positives: z.array(z.string()),
-  fix: GrammarFixSchema.nullable(),
-  tip: z.string().nullable(),
-  betterLine: z.string().nullable(),
-  createdAt: z.string().nullable(),
-  snowflakes: z.number().int().min(0).default(0),
-  category: z.string().nullable().optional(),
-  moreFixes: z.array(SlipSchema).optional(),
-  corrected: z.string().nullable().optional(),
+  fix: z.nullable(GrammarFixSchema),
+  tip: z.nullable(z.string()),
+  betterLine: z.nullable(z.string()),
+  createdAt: z.nullable(z.string()),
+  snowflakes: z._default(z.int().check(z.minimum(0)), 0),
+  category: z.optional(z.nullable(z.string())),
+  moreFixes: z.optional(z.array(SlipSchema)),
+  corrected: z.optional(z.nullable(z.string())),
 });
 export type Story = z.infer<typeof StorySchema>;
 
 export const CertificateSchema = z.object({
   earned: z.boolean(),
   name: z.string(),
-  earnedAt: z.string().nullable(),
+  earnedAt: z.nullable(z.string()),
   moments: z.array(z.string()),
-  daysPractised: z.number().int().min(0),
-  daysNeeded: z.number().int().min(0),
+  daysPractised: z.int().check(z.minimum(0)),
+  daysNeeded: z.int().check(z.minimum(0)),
   momentsLeft: z.array(z.string()),
 });
 export type Certificate = z.infer<typeof CertificateSchema>;
@@ -314,7 +313,7 @@ export const GroupMemberSchema = z.object({
   name: z.string(),
   firstName: z.string(),
   isMe: z.boolean(),
-  weekSnowflakes: z.number().int().min(0),
+  weekSnowflakes: z.int().check(z.minimum(0)),
   practisedToday: z.boolean(),
 });
 export type GroupMember = z.infer<typeof GroupMemberSchema>;
@@ -323,15 +322,15 @@ export const GroupSchema = z.object({
   name: z.string(),
   code: z.string(),
   members: z.array(GroupMemberSchema),
-  maxMembers: z.number().int().min(1),
-  weekTotal: z.number().int().min(0),
-  weekGoal: z.number().int().min(0),
+  maxMembers: z.int().check(z.minimum(1)),
+  weekTotal: z.int().check(z.minimum(0)),
+  weekGoal: z.int().check(z.minimum(0)),
   createdByMe: z.boolean(),
 });
 export type Group = z.infer<typeof GroupSchema>;
 
 export const GroupStatusSchema = z.object({
-  group: GroupSchema.nullable(),
+  group: z.nullable(GroupSchema),
   /** False when the host app didn't send her centre: groups only mix teachers of one centre. */
   canJoin: z.boolean(),
 });

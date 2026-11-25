@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod/mini';
 import {
   FeedbackSchema,
   ReplySchema,
@@ -36,16 +36,16 @@ import { MAX_LEVEL, QUICK_LINES, WEEK_TITLES, isoDay, programmeState, streak, PR
 const STORAGE_KEY = 'ai-tutor:mock:v2';
 
 const StoredRunSchema = z.object({
-  runNumber: z.number().int().min(1),
-  turnIndex: z.number().int().min(0),
+  runNumber: z.int().check(z.minimum(1)),
+  turnIndex: z.int().check(z.minimum(0)),
   completed: z.boolean(),
   kind: z.enum(['full', 'quick']),
-  level: z.number().int().min(1).max(4),
+  level: z.int().check(z.minimum(1)).check(z.maximum(4)),
   replies: z.array(ReplySchema),
   /** Feedback on the first attempt at each turn — this is what progress dots measure. */
   firstAttempts: z.record(z.string(), z.object({ transcript: z.string(), feedback: FeedbackSchema })),
   /** Her local date when it was finished (snowflakes this week). */
-  completedOn: z.string().optional(),
+  completedOn: z.optional(z.string()),
 });
 type StoredRun = z.infer<typeof StoredRunSchema>;
 
@@ -53,15 +53,15 @@ const MockStateSchema = z.object({
   runs: z.record(z.string(), z.array(StoredRunSchema)),
   consented: z.boolean(),
   quietMode: z.boolean(),
-  nudgeTime: z.string().nullable(),
-  hardestMomentId: z.string().nullable(),
+  nudgeTime: z.nullable(z.string()),
+  hardestMomentId: z.nullable(z.string()),
   practiceDays: z.array(z.string()),
   levels: z.record(z.string(), z.number()),
-  phrasebook: z.array(z.object({ id: z.number(), text: z.string(), source: z.string(), momentId: z.string().nullable(), createdAt: z.string() })),
+  phrasebook: z.array(z.object({ id: z.number(), text: z.string(), source: z.string(), momentId: z.nullable(z.string()), createdAt: z.string() })),
   stories: z.array(StorySchema),
-  certificateEarnedAt: z.string().nullable(),
+  certificateEarnedAt: z.nullable(z.string()),
   nextId: z.number(),
-  group: z.object({ name: z.string(), code: z.string(), createdByMe: z.boolean(), demo: z.boolean() }).nullable().default(null),
+  group: z._default(z.nullable(z.object({ name: z.string(), code: z.string(), createdByMe: z.boolean(), demo: z.boolean() })), null),
 });
 type MockState = z.infer<typeof MockStateSchema>;
 
@@ -294,6 +294,23 @@ export function createMockApi({ storage = safeStorage(), latencyMs = 350, onboar
       createdByMe: state.group.createdByMe,
     };
   };
+  /** Lines she slipped on and later said right: on another try, or in a later run (as the backend). */
+  const linesFixed = (state: MockState): number => {
+    const fixed = new Set<string>();
+    for (const m of MOMENTS.filter((x) => x.kind !== 'baseline')) {
+      const previous: Partial<Record<StoredRun['kind'], StoredRun>> = {};
+      for (const run of runsOf(state, m.id)) {
+        for (const [turnId, first] of Object.entries(run.firstAttempts)) {
+          const last = run.replies.find((r) => r.turnId === turnId);
+          if (last && last.attempt > 1 && first.feedback.fix && improvedWords(first.transcript, slipsOf(first.feedback), last.transcript).length) fixed.add(`${m.id}:${turnId}`);
+          const before = previous[run.kind]?.firstAttempts[turnId];
+          if (before?.feedback.fix && improvedWords(before.transcript, slipsOf(before.feedback), first.transcript).length) fixed.add(`${m.id}:${turnId}`);
+        }
+        previous[run.kind] = run;
+      }
+    }
+    return fixed.size;
+  };
   const groupStatus = (state: MockState): GroupStatus => ({ group: groupOf(state), canJoin: true });
 
   const allowedLine = (state: MockState, text: string): string | null => {
@@ -381,7 +398,7 @@ export function createMockApi({ storage = safeStorage(), latencyMs = 350, onboar
       return wait({
         learner: LEARNER,
         moments: MOMENTS.filter((m) => m.kind !== 'baseline').map((m) => progressOf(state, m)),
-        trends: { daysPractised: days, fillers: null, grammarSlips: days >= 2 ? 'fewer' : null },
+        trends: { daysPractised: days, fillers: null, grammarSlips: days >= 2 ? 'fewer' : null, linesFixed: linesFixed(state) },
       });
     },
 

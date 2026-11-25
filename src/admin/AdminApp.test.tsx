@@ -38,7 +38,7 @@ describe('Admin console', () => {
   it('asks for a sign-in, shows errors, then opens the dashboard', async () => {
     const user = userEvent.setup();
     renderRoute('/admin');
-    expect(await screen.findByRole('heading', { name: 'AI Tutor console' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'ELSA console' })).toBeInTheDocument();
 
     await user.type(screen.getByLabelText('Username'), 'bloom');
     await user.type(screen.getByLabelText('Password'), 'nope');

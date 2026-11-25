@@ -88,3 +88,6 @@ def test_summary_shows_lines_better_than_last_time(learner: TestClient) -> None:
     _finish(learner, run)
     improved = learner.get("/api/tutor/moments/morning-greeting/summary").json()["improved"]
     assert [(i["when"], i["words"], i["beforeWrongs"]) for i in improved] == [("last_time", ["will", "in"], ["settle"])]
+
+    # The Progress screen counts it as a line she fixed.
+    assert learner.get("/api/tutor/progress").json()["trends"]["linesFixed"] == 1

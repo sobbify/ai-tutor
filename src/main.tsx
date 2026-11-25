@@ -1,9 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import '@fontsource/nunito/latin-400.css';
-import '@fontsource/nunito/latin-600.css';
-import '@fontsource/nunito/latin-700.css';
-import '@fontsource/nunito/latin-800.css';
+// One variable font file covers every weight we use (400–800): one download instead of four.
+import '@fontsource-variable/nunito/wght.css';
 import './styles/index.css';
 import { apiMode, createApi } from './api/client';
 import { App } from './app/App';

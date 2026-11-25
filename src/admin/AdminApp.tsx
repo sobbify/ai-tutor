@@ -72,7 +72,7 @@ function Login() {
       <div className="mb-6 flex items-center gap-3">
         <img src="/favicon.svg" alt="" className="size-11" />
         <div>
-          <h1 className="text-[22px] leading-tight font-extrabold">AI Tutor console</h1>
+          <h1 className="text-[22px] leading-tight font-extrabold">ELSA console</h1>
           <p className="text-[14px] text-ink-2">Sign in to manage the database.</p>
         </div>
       </div>
@@ -117,7 +117,7 @@ function Shell({ username }: { username: string }) {
         <div className="flex items-center gap-3 px-5 py-5">
           <img src="/favicon.svg" alt="" className="size-9 rounded-xl ring-2 ring-white/40" />
           <div className="leading-tight">
-            <p className="text-[17px] font-extrabold">AI Tutor</p>
+            <p className="text-[17px] font-extrabold">ELSA</p>
             <p className="text-[12.5px] text-white/85">Database console</p>
           </div>
         </div>

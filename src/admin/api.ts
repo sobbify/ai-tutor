@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod/mini';
 import { MomentIconSchema, MomentProgressSchema } from '@/types/tutor';
 
 /**
@@ -18,7 +18,7 @@ export class AdminApiError extends Error {
 
 const ROOT = '/api/admin';
 
-async function call<S extends z.ZodType>(path: string, schema: S, init: RequestInit = {}): Promise<z.infer<S>> {
+async function call<S extends z.ZodMiniType>(path: string, schema: S, init: RequestInit = {}): Promise<z.infer<S>> {
   let res: Response;
   try {
     res = await fetch(`${ROOT}${path}`, {
@@ -69,7 +69,7 @@ export async function download(path: string, fallbackName: string) {
 // ---- schemas -------------------------------------------------------------------------------
 
 const date = z.string();
-export const pageOf = <T extends z.ZodType>(item: T) => z.object({ items: z.array(item), total: z.number(), page: z.number(), size: z.number() });
+export const pageOf = <T extends z.ZodMiniType>(item: T) => z.object({ items: z.array(item), total: z.number(), page: z.number(), size: z.number() });
 
 export const AdminMeSchema = z.object({ username: z.string() });
 
@@ -81,11 +81,11 @@ export const StatsSchema = z.object({
     repliesTotal: z.number(),
     repliesWeek: z.number(),
     completedRuns: z.number(),
-    accuracyMonth: z.number().nullable(),
-    avgEvalMs: z.number().nullable(),
+    accuracyMonth: z.nullable(z.number()),
+    avgEvalMs: z.nullable(z.number()),
   }),
   activity: z.array(z.object({ date: z.string(), replies: z.number(), learners: z.number() })),
-  moments: z.array(z.object({ id: z.string(), title: z.string(), learnersStarted: z.number(), completions: z.number(), accuracy: z.number().nullable() })),
+  moments: z.array(z.object({ id: z.string(), title: z.string(), learnersStarted: z.number(), completions: z.number(), accuracy: z.nullable(z.number()) })),
   topFixes: z.array(z.object({ wrong: z.string(), better: z.string(), count: z.number() })),
 });
 export type Stats = z.infer<typeof StatsSchema>;
@@ -97,7 +97,7 @@ export const LearnerRowSchema = z.object({
   lastSeenAt: date,
   momentsDone: z.number(),
   replies: z.number(),
-  accuracy: z.number().nullable(),
+  accuracy: z.nullable(z.number()),
 });
 export type LearnerRow = z.infer<typeof LearnerRowSchema>;
 
@@ -111,8 +111,8 @@ export const ReplyRowSchema = z.object({
   parentLine: z.string(),
   transcript: z.string(),
   attempt: z.number(),
-  fixWrong: z.string().nullable(),
-  fixBetter: z.string().nullable(),
+  fixWrong: z.nullable(z.string()),
+  fixBetter: z.nullable(z.string()),
   positives: z.array(z.string()),
   evaluator: z.string(),
   latencyMs: z.number(),
@@ -123,8 +123,8 @@ export type ReplyRow = z.infer<typeof ReplyRowSchema>;
 export const LearnerDetailSchema = z.object({
   uid: z.string(),
   name: z.string(),
-  centre: z.string().nullable().default(null),
-  group: z.string().nullable().default(null),
+  centre: z._default(z.nullable(z.string()), null),
+  group: z._default(z.nullable(z.string()), null),
   createdAt: date,
   lastSeenAt: date,
   sessions: z.array(z.object({ createdAt: date, lastUsedAt: date, expiresAt: date, userAgent: z.string() })),
@@ -138,8 +138,8 @@ export const MomentRowSchema = z.object({
   title: z.string(),
   order: z.number(),
   icon: z.string(),
-  kind: z.string().optional(),
-  week: z.number().nullable().optional(),
+  kind: z.optional(z.string()),
+  week: z.optional(z.nullable(z.number())),
   published: z.boolean(),
   lines: z.number(),
   videos: z.number(),
@@ -156,10 +156,10 @@ export const EditableTurnSchema = z.object({
     z.object({ kind: z.literal('sentence'), text: z.string() }),
     z.object({ kind: z.literal('starters'), options: z.array(z.string()) }),
   ]),
-  videoUrl: z.string().nullable(),
+  videoUrl: z.nullable(z.string()),
   demoReply: z.string(),
   knownFixes: z.array(KnownFixSchema),
-  minLevel: z.number().int().min(1).max(4),
+  minLevel: z.int().check(z.minimum(1)).check(z.maximum(4)),
 });
 export type EditableTurn = z.infer<typeof EditableTurnSchema>;
 
@@ -169,19 +169,18 @@ export const EditableMomentSchema = z.object({
   order: z.number(),
   icon: MomentIconSchema,
   scene: z.string(),
-  character: z.object({ name: z.string(), role: z.string(), initials: z.string(), posterUrl: z.string().nullable() }),
+  character: z.object({ name: z.string(), role: z.string(), initials: z.string(), posterUrl: z.nullable(z.string()) }),
   possessive: z.enum(['her', 'his', 'their']),
   published: z.boolean(),
   kind: z.enum(['programme', 'anytime', 'baseline']),
-  week: z.number().int().min(1).max(3).nullable(),
-  lesson: z
+  week: z.nullable(z.int().check(z.minimum(1)).check(z.maximum(3))),
+  lesson: z.nullable(z
     .object({
       title: z.string(),
       intro: z.string(),
       phrases: z.array(z.object({ text: z.string(), note: z.string() })),
       tip: z.string(),
-    })
-    .nullable(),
+    })),
   turns: z.array(EditableTurnSchema),
 });
 export type EditableMoment = z.infer<typeof EditableMomentSchema>;
@@ -197,7 +196,7 @@ export const AuditRowSchema = z.object({
 });
 export type AuditRow = z.infer<typeof AuditRowSchema>;
 
-export const AdminRowSchema = z.object({ username: z.string(), isActive: z.boolean(), createdAt: date, lastLoginAt: date.nullable() });
+export const AdminRowSchema = z.object({ username: z.string(), isActive: z.boolean(), createdAt: date, lastLoginAt: z.nullable(date) });
 export type AdminRow = z.infer<typeof AdminRowSchema>;
 
 // ---- endpoints -----------------------------------------------------------------------------
@@ -212,7 +211,7 @@ export const adminApi = {
   login: (username: string, password: string) => call('/login', AdminMeSchema, json('POST', { username, password })),
   logout: () => call('/logout', z.undefined(), json('POST')),
   me: () => call('/me', AdminMeSchema),
-  session: () => call('/session', z.object({ username: z.string().nullable() })),
+  session: () => call('/session', z.object({ username: z.nullable(z.string()) })),
   changePassword: (currentPassword: string, newPassword: string) =>
     call('/me/password', z.undefined(), json('POST', { currentPassword, newPassword })),
 

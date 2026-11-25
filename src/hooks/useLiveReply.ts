@@ -3,7 +3,7 @@ import { apiMode } from '@/api/client';
 import { notifySessionLost } from '@/api/session';
 import { ApiError } from '@/api/types';
 import { IDLE_LEVELS, barLevels, getAudioContext, loadRecorderWorklet, webAudioSupported } from '@/lib/audio/context';
-import type { z } from 'zod';
+import type * as z from 'zod/mini';
 import { ReplySchema, StorySchema, type MomentId, type Reply, type Story } from '@/types/tutor';
 import type { RecorderStatus } from './useRecorder';
 
@@ -76,7 +76,7 @@ const serverError = (m: ServerMessage) =>
 function useLiveCapture<T>(
   path: string,
   resultKey: 'reply' | 'story',
-  schema: z.ZodType<T>,
+  schema: z.ZodMiniType<T>,
   { maxDurationMs = 60_000, onMaxDuration }: CaptureOptions = {},
 ) {
   const [status, setStatus] = useState<RecorderStatus>('idle');

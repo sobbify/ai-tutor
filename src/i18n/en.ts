@@ -413,6 +413,7 @@ export const en = {
   progress: {
     title: 'Your Progress',
     trendsHeading: 'Gently, Over Time',
+    linesFixed: (n: number) => (n === 1 ? 'You fixed 1 line you once slipped on' : `You fixed ${n} lines you once slipped on`),
     daysPractised: (n: number) => (n === 1 ? '1 day practised' : `${n} days practised`),
     fillers: { fewer: 'Fewer ums and uhs than when you started', same: 'Ums and uhs: about the same — that’s fine', more: 'A few more pauses lately — that’s normal when lines get harder' },
     grammarSlips: { fewer: 'Fewer grammar slips than when you started', same: 'Grammar: steady', more: 'Harder lines bring new slips — keep going' },

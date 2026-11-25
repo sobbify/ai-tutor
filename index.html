@@ -4,15 +4,24 @@
     <meta charset="UTF-8" />
     <!-- CSP -->
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="description" content="AI Tutor — practise speaking with parents, one moment at a time." />
+    <meta name="description" content="ELSA — practise speaking English with parents, one moment at a time." />
     <meta name="theme-color" content="#1F92FC" />
     <meta name="referrer" content="no-referrer" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <title>ELSA · English speaking coach</title>
   </head>
   <body>
-    <div id="root"></div>
-    <noscript>AI Tutor needs JavaScript to run.</noscript>
+    <!-- Painted as soon as the stylesheet arrives, before the app's script has downloaded (slow 4G);
+         React replaces it on start. Styled in src/styles/index.css (.boot-*), since the CSP allows no
+         inline styles. -->
+    <div id="root"><div class="boot" role="status" aria-live="polite">
+      <div class="boot-bar"><span class="boot-title">ELSA</span></div>
+      <span class="boot-sr">Loading…</span>
+      <div class="boot-body" aria-hidden="true">
+        <div class="boot-block boot-tall"></div><div class="boot-block"></div><div class="boot-block"></div>
+      </div>
+    </div></div>
+    <noscript>ELSA needs JavaScript to run. Please turn it on, or open ELSA again from Buddy’s World.</noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

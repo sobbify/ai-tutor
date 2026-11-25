@@ -262,8 +262,24 @@ class Journey:
                 return "more"
             return "same"
 
+        fixed: set[tuple[str, str]] = set()
+        for mid, rs in runs_by_moment.items():
+            if mid in baseline:
+                continue
+            previous: dict[str, RunView] = {}  # kind → the run before, for "since last time"
+            for run in sorted(rs, key=lambda r: r.run_number):
+                view = RunView(run)
+                for turn_id in {r.turn_id for r in run.replies}:
+                    opening, final = view.first(turn_id), view.latest(turn_id)
+                    if opening and final and final.attempt > 1 and improved_since(opening, final):
+                        fixed.add((mid, turn_id))
+                    before = previous[run.kind].first(turn_id) if run.kind in previous else None
+                    if opening and improved_since(before, opening):
+                        fixed.add((mid, turn_id))
+                previous[run.kind] = view
+
         days = await prog.practice_days(self.db, self.learner)
-        out = Trends(days_practised=len(days), fillers=None, grammar_slips=None)
+        out = Trends(days_practised=len(days), fillers=None, grammar_slips=None, lines_fixed=len(fixed))
         if len(runs) >= 2:
             first, latest = stats(runs[:2]), stats(runs[-2:])
             if first and latest:

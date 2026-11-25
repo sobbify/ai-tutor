@@ -33,7 +33,7 @@ export default function Learners() {
 
   return (
     <>
-      <PageHeader title="Learners" subtitle="Everyone who has opened AI Tutor. Search by ID or name." />
+      <PageHeader title="Learners" subtitle="Everyone who has opened ELSA. Search by ID or name." />
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <SearchBox value={q} onChange={setQ} label="Search learners" placeholder="Search ID or name" />
         <div className="flex items-center gap-2 text-[13.5px] font-bold">

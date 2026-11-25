@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod/mini';
 import {
   CertificateSchema,
   GroupStatusSchema,
@@ -88,7 +88,7 @@ export function createHttpApi(baseUrl = ''): TutorApi {
   const root = `${baseUrl.replace(/\/$/, '')}/api/tutor`;
   const momentPath = (id: MomentId) => `${root}/moments/${encodeURIComponent(id)}`;
 
-  async function request<S extends z.ZodType>(
+  async function request<S extends z.ZodMiniType>(
     url: string,
     schema: S,
     init: RequestInit & { timeoutMs?: number; allowEmpty?: boolean } = {},
@@ -148,7 +148,7 @@ export function createHttpApi(baseUrl = ''): TutorApi {
     deleteMyData: () => noContent(`${root}/me/data`),
     getProgress: () => request(`${root}/progress`, ProgressSchema),
     getMoment: (id) => request(momentPath(id), MomentSchema),
-    getRun: (id) => request(`${momentPath(id)}/run`, RunSchema.nullable(), { allowEmpty: true }),
+    getRun: (id) => request(`${momentPath(id)}/run`, z.nullable(RunSchema), { allowEmpty: true }),
     startRun: (id, options) =>
       request(`${momentPath(id)}/run`, RunSchema, {
         method: 'POST',

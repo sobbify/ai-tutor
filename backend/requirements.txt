@@ -11,4 +11,4 @@ python-multipart>=0.0.9
 structlog>=24.1
 google-genai>=2.3  # 3.x needs Python 3.11+; the code pins the API version itself
 tzdata>=2024.1  # school timezone on systems without a zoneinfo database
-# PostgreSQL (optional): asyncpg>=0.29
+asyncpg>=0.29  # PostgreSQL: the production database

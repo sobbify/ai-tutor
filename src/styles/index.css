@@ -6,7 +6,7 @@
  * the Figma file uses a brighter action blue (#003EF2) than Buddy's World deep blue.
  */
 @theme {
-  --font-sans: 'Nunito', ui-rounded, system-ui, sans-serif;
+  --font-sans: 'Nunito Variable', 'Nunito', ui-rounded, system-ui, sans-serif;
 
   --color-header: #1f92fc; /* app bar */
   --color-action: #003ef2; /* buttons, links, progress, mic */
@@ -343,6 +343,64 @@
 }
 
 /* Loading placeholders. */
+/* Boot screen in index.html: header bar and shimmer blocks until the app starts. Uses the light
+   tokens, and the dark ones when the phone is in dark mode (the theme attribute isn't set yet). */
+.boot {
+  margin: 0 auto;
+  display: flex;
+  min-height: 100dvh;
+  max-width: 480px;
+  flex-direction: column;
+  background: var(--color-surface);
+}
+.boot-bar {
+  background: var(--color-header);
+  padding: max(env(safe-area-inset-top), 38px) 20px 10px;
+  height: calc(56px + max(env(safe-area-inset-top), 38px));
+  display: flex;
+  align-items: flex-end;
+}
+.boot-title {
+  color: #fff;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 56px;
+}
+.boot-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.boot-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+}
+.boot-block {
+  height: 76px;
+  border-radius: var(--radius-card);
+  background: linear-gradient(90deg, var(--color-mist) 0, var(--color-line) 40%, var(--color-mist) 80%) 0 0 / 400px 100%;
+  animation: var(--animate-shimmer);
+}
+.boot-tall {
+  height: 120px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .boot {
+    background: #121a23;
+  }
+  :root:not([data-theme]) .boot-bar {
+    background: #173a66;
+  }
+  :root:not([data-theme]) .boot-block {
+    background: #1c2631;
+  }
+}
+
 .skeleton {
   background: linear-gradient(90deg, var(--color-mist) 0, var(--color-line) 40%, var(--color-mist) 80%) 0 0 / 400px 100%;
   animation: var(--animate-shimmer);

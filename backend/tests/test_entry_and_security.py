@@ -98,7 +98,7 @@ def test_entry_rate_limited(tmp_path) -> None:  # type: ignore[no-untyped-def]
 
 
 def test_secure_cookie_and_hsts_in_production(tmp_path) -> None:  # type: ignore[no-untyped-def]
-    settings: Settings = make_settings(tmp_path, environment="production")
+    settings: Settings = make_settings(tmp_path, environment="production", allow_sqlite_in_production=True)
     with TestClient(create_app(settings), base_url="https://tutor.example") as c:
         r = c.get("/in", params={"uid": "t", "name": "A"}, follow_redirects=False)
         assert "Secure" in r.headers["set-cookie"]
@@ -107,7 +107,9 @@ def test_secure_cookie_and_hsts_in_production(tmp_path) -> None:  # type: ignore
 
 
 def test_ready_reports_database(client: TestClient) -> None:
-    assert client.get("/api/ready").json() == {"ok": True, "database": "ok", "evaluator": "rules"}
+    body = client.get("/api/ready").json()
+    assert body == {"ok": True, "database": "ok", "database_kind": body["database_kind"], "evaluator": "rules"}
+    assert body["database_kind"] in {"sqlite", "postgresql"}  # postgresql when TEST_DATABASE_URL is set
 
 
 def test_framing_denied_by_default(client: TestClient) -> None:

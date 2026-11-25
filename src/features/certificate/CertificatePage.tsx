@@ -32,7 +32,7 @@ async function renderPng(c: Certificate): Promise<Blob> {
   g.textAlign = 'center';
   const line = (text: string, y: number, size: number, weight: number, color = '#2c2b2b') => {
     g.fillStyle = color;
-    g.font = `${weight} ${size}px Nunito, system-ui, sans-serif`;
+    g.font = `${weight} ${size}px "Nunito Variable", Nunito, system-ui, sans-serif`;
     g.fillText(text, canvas.width / 2, y);
   };
   line(t.common.appName, 150, 56, 800, '#003ef2');

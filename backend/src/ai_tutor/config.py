@@ -6,7 +6,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BACKEND_DIR = Path(__file__).resolve().parents[2]
@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     # postgresql+asyncpg://tutor:secret@db:5432/tutor
     database_url: str = f"sqlite+aiosqlite:///{(BACKEND_DIR / 'data' / 'tutor.db').as_posix()}"
     db_echo: bool = False
+    # Production runs on PostgreSQL only (SQLite is for local development and tests). Set this only
+    # to run a production-mode check locally, never on a server.
+    allow_sqlite_in_production: bool = False
     auto_migrate: bool = True  # run `alembic upgrade head` at startup (single-instance deployments)
 
     # Gemini (same key format as the Live tutor: JSON list, comma or newline separated)
@@ -86,6 +89,31 @@ class Settings(BaseSettings):
         if isinstance(v, str):
             return [o.strip() for o in v.split(",") if o.strip()]
         return v
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def _database_url(cls, v: object) -> object:
+        """Accept the URL hosts hand out (postgres://…, postgresql://…?sslmode=require) and use asyncpg."""
+        if not isinstance(v, str):
+            return v
+        url = v.strip()
+        for prefix in ("postgres://", "postgresql://"):
+            if url.startswith(prefix):
+                url = "postgresql+asyncpg://" + url[len(prefix) :]
+                break
+        if url.startswith("postgresql+asyncpg://"):
+            # asyncpg spells libpq's sslmode as ssl
+            url = url.replace("sslmode=", "ssl=")
+        return url
+
+    @model_validator(mode="after")
+    def _postgres_in_production(self) -> Settings:
+        production = self.environment == "production" and not self.allow_sqlite_in_production
+        if production and not self.database_url.startswith("postgresql"):
+            raise ValueError(
+                "Production needs PostgreSQL: set DATABASE_URL to postgresql://… (SQLite is for development only)."
+            )
+        return self
 
     @field_validator("school_timezone")
     @classmethod

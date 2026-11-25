@@ -25,4 +25,9 @@ async def ready(request: Request, response: Response) -> dict[str, object]:
     except Exception:  # noqa: BLE001 - report "unavailable", never leak
         response.status_code = 503
         return {"ok": False, "database": "unavailable"}
-    return {"ok": True, "database": "ok", "evaluator": st.evaluator.name}
+    return {
+        "ok": True,
+        "database": "ok",
+        "database_kind": st.db.engine.dialect.name,  # "postgresql" in production
+        "evaluator": st.evaluator.name,
+    }

@@ -162,7 +162,7 @@ export default function LearnerDetail() {
           )}
         </Field>
       </ConfirmDialog>
-      <ConfirmDialog open={dialog === 'signout'} title="Sign out everywhere" body="Every browser this learner is signed into will need to open AI Tutor from the app again." confirmLabel="Sign out" busy={signOut.isPending} onConfirm={() => signOut.mutate()} onClose={() => setDialog(null)} />
+      <ConfirmDialog open={dialog === 'signout'} title="Sign out everywhere" body="Every browser this learner is signed into will need to open ELSA from Buddy’s World again." confirmLabel="Sign out" busy={signOut.isPending} onConfirm={() => signOut.mutate()} onClose={() => setDialog(null)} />
       <ConfirmDialog open={dialog === 'delete'} title="Delete learner" body={<>This permanently deletes <b>{l.name}</b> and all their practice history. Download their data first if you need it.</>} confirmLabel="Delete forever" danger typeToConfirm={l.uid} busy={remove.isPending} onConfirm={() => remove.mutate()} onClose={() => setDialog(null)} />
     </>
   );

@@ -157,6 +157,12 @@ npm run test:e2e     # Playwright + axe accessibility checks (mock build)
 
 See [`backend/README.md`](backend/README.md) for the API, configuration, migrations and operations.
 
+**Production runs on PostgreSQL only.** With `ENVIRONMENT=production` the app refuses to start
+unless `DATABASE_URL` points at PostgreSQL (SQLite is for development and tests). Host-style URLs
+work as given — `postgres://…` or `postgresql://…?sslmode=require` are converted for the asyncpg
+driver — and `GET /api/ready` reports `"database_kind": "postgresql"`. `docker compose up` runs
+PostgreSQL 16 next to the app.
+
 ## Security
 
 - HttpOnly session cookies. Only SHA-256 token hashes are stored. Learner sessions expire after
@@ -179,15 +185,15 @@ See [`backend/README.md`](backend/README.md) for the API, configuration, migrati
 
 ## Quality
 
-- **Backend:** 76 pytest tests pass on SQLite **and** PostgreSQL 16 (realtime audio against a
+- **Backend:** 92 pytest tests pass on SQLite **and** PostgreSQL 16 (realtime audio against a
   fake Gemini Live; `ai-tutor audio-check` runs reply and story feedback against the real one —
   results arrive 1.3–2.2 s after Stop). ruff and mypy `--strict` are clean, and migrations match
   the models and run up and down.
-- **Feedback quality:** `backend/evals/` holds 36 scripted teacher replies (tense, agreement,
+- **Feedback quality:** `backend/evals/` holds 42 scripted teacher replies (tense, agreement,
   articles, prepositions, word order, Indian English that must *not* be "fixed", fillers, Hindi,
-  a blunt reply, an off-topic reply, a prompt injection, silence). `python -m evals.run_feedback_eval
+  a blunt reply, an off-topic reply, a prompt injection, silence, several slips in one reply). `python -m evals.run_feedback_eval
   --live` voices each one and runs it through the real Gemini Live coach.
-- **Frontend:** 63 Vitest tests, a Playwright end-to-end flow, and axe WCAG 2.1 AA checks with
+- **Frontend:** 90 Vitest tests, a Playwright end-to-end flow, and axe WCAG 2.1 AA checks with
   0 violations on every learner and console screen — in light **and** dark.
 - **Google Lighthouse** (production build): Accessibility 100, Best Practices 100, SEO 100 and
   Performance 92–97 on the learner screens (home, welcome, learn, story, phrasebook, settings,

@@ -33,7 +33,7 @@ async def enter(
         entry = EntryIn(uid=uid or "", name=name or "", centre=centre or None)
     except ValidationError:
         return message_page(
-            400, "Can’t open AI Tutor", "The app sent an invalid ID or name. Please open AI Tutor again from the app."
+            400, "Can’t open ELSA", "The app sent an invalid ID or name. Please open ELSA again from Buddy’s World."
         )
 
     learner = await db.scalar(select(Learner).where(Learner.uid == entry.uid))
@@ -100,5 +100,5 @@ def denied_page() -> HTMLResponse:
     return message_page(
         403,
         "Session not available",
-        "This practice session has ended or expired. Please open AI Tutor again from the app.",
+        "This practice session has ended or expired. Please open ELSA again from Buddy’s World.",
     )

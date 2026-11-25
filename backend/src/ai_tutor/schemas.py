@@ -151,6 +151,9 @@ class Trends(Camel):
     days_practised: int
     fillers: Trend | None
     grammar_slips: Trend | None
+    # Lines she slipped on and later said right (on another try, or in a later run): progress she
+    # made herself, so it only ever counts up.
+    lines_fixed: int = 0
 
 
 class ProgressOut(Camel):
