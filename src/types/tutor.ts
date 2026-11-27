@@ -143,6 +143,8 @@ export const MomentProgressSchema = z.object({
   /** Per-turn grammar result (true = correct) on the first completed run, and on the latest. */
   firstTry: z.nullable(z.array(z.boolean())),
   latest: z.nullable(z.array(z.boolean())),
+  /** Who she talks to in this moment ("Ria’s mother"); shown on the lecture card. */
+  characterName: z.optional(z.nullable(z.string())),
 });
 export type MomentProgress = z.infer<typeof MomentProgressSchema>;
 

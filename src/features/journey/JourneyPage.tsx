@@ -15,8 +15,9 @@ import { Pill } from '@/components/ui/Pill';
 import { SegmentedProgress, type SegmentState } from '@/components/ui/Progress';
 import { MomentGlyph } from './MomentGlyph';
 import { ProgrammePath } from './ProgrammePath';
+import { buildLectures, type Lecture } from './path';
 
-/** Home tab: today's programme day, her moment for today and the 3-week map (02 / 14). */
+/** Home tab: her lectures so far, anything ELSA suggests, and the lecture path (02 / 14). */
 export default function JourneyPage() {
   const home = useHome();
   const progress = useProgress();
@@ -41,14 +42,20 @@ export default function JourneyPage() {
   );
 }
 
-function daySegments(home: Home): SegmentState[] {
-  const { programme: p } = home;
-  return Array.from({ length: p.totalDays }, (_, i) => (i < p.daysPractised ? 'done' : i === p.daysPractised ? 'current' : 'idle'));
+/** One segment per lecture: done, the one she is on, or still to come. */
+function lectureSegments(lectures: Lecture[]): SegmentState[] {
+  return lectures.map((l) => (l.state === 'done' ? 'done' : l.state === 'active' ? 'current' : 'idle'));
 }
 
 function HomeContent({ home, moments }: { home: Home; moments: MomentProgress[] }) {
   const p = home.programme;
-  const dayLabel = `${t.home.dayOf(p.day, p.totalDays)} · ${t.home.week(p.week, p.weekTitle)}`;
+  const lectures = buildLectures(moments);
+  const done = lectures.filter((l) => l.state === 'done').length;
+  const countLabel = t.lecture.doneCount(done, lectures.length);
+  // The lecture she is on is opened up on the path below, so a "Today" card for it would only
+  // repeat it. Keep the card for anything else ELSA suggests (say, her hardest moment first).
+  const active = lectures.find((l) => l.state === 'active');
+  const suggestion = home.recommended && home.recommended.momentId !== active?.moment.id ? home.recommended : null;
 
   return (
     <>
@@ -73,8 +80,8 @@ function HomeContent({ home, moments }: { home: Home; moments: MomentProgress[] 
             </Link>
           </span>
         </div>
-        <p className="mt-1 text-[14px] leading-5 font-semibold text-ink">{dayLabel}</p>
-        <SegmentedProgress className="mt-3" segments={daySegments(home)} label={dayLabel} />
+        <SegmentedProgress className="mt-3" segments={lectureSegments(lectures)} label={countLabel} />
+        <p className="mt-2 text-[14px] leading-5 font-bold text-ink">{countLabel}</p>
         <div className="mt-3.5 flex items-center justify-between gap-2">
           <p className="flex items-center gap-1.5 text-[12.5px] font-semibold text-sage">
             <LockIcon size={15} />
@@ -94,12 +101,12 @@ function HomeContent({ home, moments }: { home: Home; moments: MomentProgress[] 
         {p.complete ? (
           <TodayCard label={t.home.today} title={t.home.programmeDone} to="/certificate" action={t.home.seeCertificate} />
         ) : (
-          home.recommended && (
+          suggestion && (
             <TodayCard
-              label={`${t.home.today} · ${t.home.reasons[home.recommended.reason]}`}
-              title={home.recommended.title}
-              to={home.recommended.reason === 'continue' ? `/moments/${home.recommended.momentId}` : `/moments/${home.recommended.momentId}/learn`}
-              action={home.recommended.reason === 'continue' ? t.home.continueToday : t.home.startToday}
+              label={`${t.home.today} · ${t.home.reasons[suggestion.reason]}`}
+              title={suggestion.title}
+              to={suggestion.reason === 'continue' ? `/moments/${suggestion.momentId}` : `/moments/${suggestion.momentId}/learn`}
+              action={suggestion.reason === 'continue' ? t.home.continueToday : t.home.startToday}
             />
           )
         )}
@@ -158,8 +165,8 @@ function HomeContent({ home, moments }: { home: Home; moments: MomentProgress[] 
         )
       )}
 
-      <h2 className="mx-5 mt-6 text-[17px] font-extrabold">{t.home.programmeHeading}</h2>
-      <ProgrammePath moments={moments} daysPractised={p.daysPractised} />
+      <h2 className="mx-5 mt-6 text-[18px] font-extrabold">{t.lecture.heading}</h2>
+      <ProgrammePath moments={moments} />
 
     </>
   );

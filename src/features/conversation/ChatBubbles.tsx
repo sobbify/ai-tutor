@@ -4,7 +4,7 @@ import { cn } from '@/lib/cn';
 import { changeAnchor, closestSentence, closestSpan, condenseDiff, diffWords } from '@/lib/wordDiff';
 import { groupSlips, slipsOf, type SlipView } from '@/lib/slips';
 import type { Character, GrammarFix, Reply } from '@/types/tutor';
-import { CheckIcon } from '@/components/ui/Icons';
+import { CheckIcon, StarIcon } from '@/components/ui/Icons';
 import { SaveLineButton } from '@/components/ui/SaveLineButton';
 import { SpeakerButton } from '@/components/ui/SpeakerButton';
 import { Face } from './Portrait';
@@ -367,7 +367,7 @@ export const CorrectionCard = memo(function CorrectionCard({
       ref={card}
       tabIndex={-1}
       aria-label={fix ? t.conversation.grammarFix : t.conversation.wellSaidTitle}
-      className={cn('relative animate-rise overflow-hidden rounded-[22px] border-2 bg-surface px-4 pt-3 pb-3.5 shadow-card', fix ? 'border-action' : 'border-ok-dot')}
+      className={cn('relative animate-rise overflow-hidden rounded-[22px] border-2 bg-surface px-4 pt-3 pb-3.5 shadow-card', fix ? 'border-action' : 'border-ok-dot/60')}
     >
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
@@ -377,12 +377,15 @@ export const CorrectionCard = memo(function CorrectionCard({
               {!many && <CategoryBadge category={slips[0]?.category} />}
             </>
           ) : (
-            <h2 className="flex items-center gap-1.5 text-[15px] font-extrabold text-ok">
-              <span className="flex size-6 animate-pop items-center justify-center rounded-full bg-ok-bg">
-                <CheckIcon size={14} strokeWidth={3} />
+            <div className="flex items-center gap-3">
+              <span className="flex size-12 shrink-0 animate-pop items-center justify-center rounded-full bg-ok-bg text-ok" aria-hidden="true">
+                <StarIcon size={26} strokeWidth={2.4} />
               </span>
-              {t.conversation.wellSaidTitle}
-            </h2>
+              <div className="min-w-0">
+                <h2 className="text-[19px] leading-6 font-extrabold text-ok">{t.conversation.wellSaidTitle}</h2>
+                <p className="text-[13.5px] leading-[19px] text-ink-2">{t.conversation.wellSaidSub}</p>
+              </div>
+            </div>
           )}
         </div>
         <button

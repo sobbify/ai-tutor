@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useParams } from 'react-router';
 import { t } from '@/i18n';
 import { cn } from '@/lib/cn';
+import { useProgress } from '@/hooks/queries';
 import { useBack } from '@/hooks/useBack';
 import { useCamera, type CameraStatus } from '@/hooks/useCamera';
 import type { Moment, Reply, Run } from '@/types/tutor';
@@ -26,6 +27,7 @@ import { AvatarStage } from './AvatarStage';
 import { CorrectionCard, LiveBubble, ParentBubble, UserBubble } from './ChatBubbles';
 import { HintPanel } from './HintPanel';
 import { sceneFor } from './portraitLook';
+import { lectureNumber } from '@/features/journey/path';
 import { useConversation, type ConversationPhase } from './useConversation';
 
 /** How long a correction floats before it docks into the chat (a "Well said!" goes sooner). */
@@ -42,6 +44,7 @@ export default function ConversationPage() {
   const c = useConversation(momentId);
   const back = useBack('/');
   const camera = useCamera();
+  const progress = useProgress();
   const [captions, setCaptions] = useState(true);
   const [docked, setDocked] = useState<string | null>(null);
 
@@ -67,6 +70,9 @@ export default function ConversationPage() {
   const total = run.turnIds.length;
   const position = run.turnIndex + 1;
   const waiting = phase === 'turn' || phase === 'not-heard';
+  // Programme moments are lectures: "Lecture 1 · Response 2 of 5".
+  const lecture = lectureNumber(progress.data?.moments, moment.id);
+  const responseLabel = lecture ? t.lecture.responseOf(lecture, position, total) : t.conversation.responseOf(position, total);
 
   return (
     <Screen className="h-dvh min-h-0">
@@ -75,10 +81,10 @@ export default function ConversationPage() {
       <main className="flex min-h-0 flex-1 flex-col">
       <div className="flex h-11 shrink-0 items-center gap-3 px-5">
         <span className="shrink-0 text-[13.5px] font-bold text-ink-2" aria-hidden="true">
-          {t.conversation.responseOf(position, total)}
+          {responseLabel}
         </span>
         {c.quick && <Pill className="shrink-0 text-[12px]">{t.conversation.quick}</Pill>}
-        <ProgressBar value={position} max={total} label={t.conversation.responseOf(position, total)} className="flex-1" />
+        <ProgressBar value={position} max={total} label={responseLabel} className="flex-1 min-w-12" />
         <CallTimer />
       </div>
 
@@ -118,7 +124,8 @@ export default function ConversationPage() {
               <p role="alert" className="rounded-card bg-mist px-4 py-3 text-center text-[14.5px] font-semibold text-ink">
                 {t.conversation.notHeard}
               </p>
-            ) : c.typing ? null : (
+            ) : c.typing || c.speakingParent ? null : (
+              // The suggestion waits until she has heard the parent out.
               <HintPanel hint={turn.hint} turnId={turn.id} />
             )}
             {c.typing && <TypingBox key={turn.id} onSend={c.sendTyped} />}
@@ -302,7 +309,11 @@ function CallControls({
   } else if (phase === 'checking') {
     status = <span className="font-semibold">{t.conversation.checking}</span>;
   } else if (phase === 'turn' || phase === 'not-heard' || requesting) {
-    status = <span className="font-bold text-ink">{phase === 'not-heard' ? t.conversation.tryAgain : t.conversation.tapToSpeak}</span>;
+    status = (
+      <span className="font-bold text-ink">
+        {phase === 'not-heard' ? t.conversation.tryAgain : c.speakingParent ? t.conversation.listenFirst : t.conversation.tapToSpeak}
+      </span>
+    );
   }
 
   let main: ReactNode;

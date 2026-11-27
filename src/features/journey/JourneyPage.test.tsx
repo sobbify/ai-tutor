@@ -4,25 +4,31 @@ import { createMockApi } from '@/api/mock/mockApi';
 import { memoryStore, renderRoute, testApi } from '@/test/utils';
 
 describe('Home', () => {
-  it('first visit: day 1, today’s moment, week 1 open and later weeks locked', async () => {
+  it('first visit: lecture 1 opened up as two parts, later lectures as one-line rows', async () => {
     renderRoute('/');
     expect(await screen.findByRole('heading', { name: 'Hi Priya!' })).toBeInTheDocument();
-    expect(screen.getAllByText('Day 1 of 15 · Week 1: Drop-off and pick-up').length).toBeGreaterThan(0);
-    expect(screen.getByText('Morning Greeting at Drop-off', { selector: 'p' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Start Morning Greeting at Drop-off' })).toHaveAttribute('href', '/moments/morning-greeting/learn');
+    expect(screen.getAllByText('0 of 4 lectures done').length).toBeGreaterThan(0);
+    expect(screen.getByRole('heading', { name: 'Your Lectures' })).toBeInTheDocument();
+    // The lecture she is on is already open on the path, so no "Today" card repeats it.
+    expect(screen.queryByRole('link', { name: 'Start Morning Greeting at Drop-off' })).not.toBeInTheDocument();
 
     const map = screen.getByRole('region', { name: 'Your practice journey' });
-    // A Duolingo-style path: learn + role-play steps per moment, a chest at the end of each week.
-    expect(within(map).getByRole('link', { name: 'Morning Greeting at Drop-off, Key phrases and a tip, start here' })).toHaveAttribute(
-      'href',
-      '/moments/morning-greeting/learn',
-    );
+    expect(within(map).getByText('Lecture 1 of 4')).toBeInTheDocument();
+    expect(within(map).getByRole('heading', { name: 'Morning Greeting at Drop-off' })).toBeInTheDocument();
+    expect(within(map).getByText('With Ria’s mother · 2 parts')).toBeInTheDocument();
+    expect(within(map).getByText('0/2 parts')).toBeInTheDocument();
+    expect(
+      within(map).getByRole('link', { name: 'Morning Greeting at Drop-off, Part 1 · Learn, Key phrases and a tip, start here' }),
+    ).toHaveAttribute('href', '/moments/morning-greeting/learn');
     expect(within(map).getByText('Start')).toBeInTheDocument();
-    expect(within(map).getByRole('link', { name: /^Pick-up Update, Key phrases and a tip, open$/ })).toHaveAttribute('href', '/moments/pickup-update/learn');
-    expect(within(map).getByRole('img', { name: /^Week 1 reward, locked$/ })).toBeInTheDocument();
-    // Weeks 2 and 3 open later: their banners say so and their steps are locked, not links.
-    expect(within(map).getAllByText('Opens soon')).toHaveLength(2);
-    expect(within(map).getByRole('img', { name: /^Parent Meeting, Key phrases and a tip, locked$/ })).toBeInTheDocument();
+    expect(within(map).getByRole('link', { name: /^Morning Greeting at Drop-off, Part 2 · Role-play, \d+ lines, open$/ })).toHaveAttribute(
+      'href',
+      '/moments/morning-greeting',
+    );
+    expect(within(map).getByRole('img', { name: /^Lecture 1 reward, locked$/ })).toBeInTheDocument();
+    // Other lectures: one line each. Ready ones lead to their next step; locked ones aren't links.
+    expect(within(map).getByRole('link', { name: /^Lecture 2:\s*Pick-up Update,\s*Ready$/ })).toHaveAttribute('href', '/moments/pickup-update/learn');
+    expect(within(map).getByRole('img', { name: 'Lecture 3: Parent Meeting, Locked' })).toBeInTheDocument();
     expect(within(map).queryByRole('link', { name: /Parent Meeting/ })).not.toBeInTheDocument();
 
     expect(screen.getByRole('link', { name: /See Progress/ })).toHaveAttribute('href', '/progress');
@@ -55,19 +61,24 @@ describe('Home', () => {
     expect(screen.getByRole('link', { name: /Settings and Privacy/ })).toHaveAttribute('href', '/settings');
   });
 
-  it('in progress: done moments link to their summary, current shows Continue, streak shows', async () => {
+  it('in progress: done lectures link to their summary, the current one shows Continue, streak shows', async () => {
     const api = testApi();
     api.seedDemoProgress();
     renderRoute('/', api);
-    expect(await screen.findByRole('link', { name: 'Morning Greeting at Drop-off, Role-play, Done · see summary, done' })).toHaveAttribute(
+    expect(await screen.findByRole('link', { name: /^Lecture 1:\s*Morning Greeting at Drop-off,\s*Done$/ })).toHaveAttribute(
       'href',
       '/moments/morning-greeting/summary',
     );
-    expect(screen.getByRole('link', { name: /^Parent Meeting, Role-play, Response 5 of \d+, start here$/ })).toHaveAttribute('href', '/moments/parent-meeting');
-    expect(within(screen.getByRole('region', { name: 'Your practice journey' })).getByText('Continue')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /^Week 1 complete!, done$/ })).toHaveAttribute('href', '/progress');
+    expect(screen.getByRole('link', { name: /^Parent Meeting, Part 2 · Role-play, Response 5 of \d+, start here$/ })).toHaveAttribute(
+      'href',
+      '/moments/parent-meeting',
+    );
+    const map = screen.getByRole('region', { name: 'Your practice journey' });
+    expect(within(map).getByText('Continue')).toBeInTheDocument();
+    expect(within(map).getByText('1/2 parts')).toBeInTheDocument();
+    expect(within(map).getByRole('img', { name: /^Lecture 3 reward, locked$/ })).toBeInTheDocument();
     expect(screen.getByText(/Your private streak/)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Continue Parent Meeting' })).toHaveAttribute('href', '/moments/parent-meeting');
+    expect(screen.queryByRole('link', { name: 'Continue Parent Meeting' })).not.toBeInTheDocument();
   });
 
   it('sends a teacher who hasn’t accepted yet to the welcome screens', async () => {

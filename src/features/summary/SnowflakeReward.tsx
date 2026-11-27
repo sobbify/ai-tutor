@@ -22,31 +22,26 @@ function useCountUp(to: number, ms = 900): number {
   return value;
 }
 
-/** End-of-session reward, like Duolingo's XP screen: "+17 ❄" with what earned it and her week. */
+/** End-of-session reward, like Duolingo's XP: "+17 ❄ snowflakes earned · 52 this week", on one line. */
 export function SnowflakeReward({ snowflakes }: { snowflakes: SnowflakesEarned }) {
   const shown = useCountUp(snowflakes.earned);
   if (snowflakes.earned <= 0) return null;
   return (
-    <section aria-labelledby="snowflake-reward" className="mt-3 animate-rise overflow-hidden rounded-[22px] border-2 border-[#7fd3ff] bg-surface">
-      <h2 id="snowflake-reward" className="bg-[#126bc0] px-4 py-1.5 text-center text-[13px] font-extrabold tracking-[0.08em] text-white uppercase">
+    <section aria-labelledby="snowflake-reward" className="mt-3 flex animate-rise flex-wrap items-center gap-x-3 gap-y-1.5 rounded-[22px] border-2 border-[#7fd3ff] bg-surface px-4 py-3">
+      <h2 id="snowflake-reward" className="sr-only">
         {t.snowflakes.earnedLabel(snowflakes.earned)}
       </h2>
-      <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 px-4 py-3">
-        <span className="flex items-center gap-1.5" aria-hidden="true">
-          <Snowflake size={40} className="animate-pop" />
-          <span className="snowflake-gradient text-[34px] leading-none font-extrabold tabular-nums">{t.snowflakes.earned(shown)}</span>
-        </span>
-        {/* Reasons never wrap: on a narrow phone the list moves under the number instead. */}
-        <ul className="min-w-[200px] flex-1 space-y-0.5 text-[13.5px] leading-5 font-semibold text-ink-2">
-          {snowflakes.items.map((item) => (
-            <li key={item.kind} className="flex items-baseline justify-between gap-3 whitespace-nowrap">
-              <span>{t.snowflakes.items[item.kind] ?? item.kind}</span>
-              <span className="font-extrabold text-ink tabular-nums">{t.snowflakes.earned(item.amount)}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-      <p className="border-t border-line px-4 py-2 text-center text-[13px] font-bold text-ink-2">{t.snowflakes.weekLabel(snowflakes.week)}</p>
+      <span className="flex shrink-0 items-center gap-1.5" aria-hidden="true">
+        <Snowflake size={34} className="animate-pop" />
+        <span className="snowflake-gradient text-[30px] leading-none font-extrabold tabular-nums">{t.snowflakes.earned(shown)}</span>
+      </span>
+      <span className="flex-1 text-[14px] leading-[19px] font-bold whitespace-nowrap text-ink-2" aria-hidden="true">
+        {t.snowflakes.earnedShort}
+      </span>
+      <span className="shrink-0 rounded-full bg-sky px-2.5 py-0.5 text-[12.5px] leading-5 font-bold whitespace-nowrap text-action">
+        <span className="sr-only">{t.snowflakes.weekLabel(snowflakes.week)}</span>
+        <span aria-hidden="true">{t.snowflakes.thisWeek(snowflakes.week)}</span>
+      </span>
     </section>
   );
 }

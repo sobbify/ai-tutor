@@ -14,6 +14,7 @@ import { Pill } from '@/components/ui/Pill';
 import { SegmentedProgress } from '@/components/ui/Progress';
 import { currentMomentId, doneCount } from '@/features/journey/journeyState';
 import { MomentGlyph } from '@/features/journey/MomentGlyph';
+import { lectureMoments } from '@/features/journey/path';
 
 /** Screens 16 (progress) and 17 (empty). */
 export default function ProgressPage() {
@@ -30,7 +31,7 @@ export default function ProgressPage() {
         ) : error ? (
           <ErrorBlock error={error} onRetry={retry} />
         ) : doneCount(data.moments) === 0 ? (
-          <EmptyProgress startHref={`/moments/${currentMomentId(data.moments.filter((m) => m.kind === 'programme')) ?? data.moments[0]?.id ?? ''}/learn`} />
+          <EmptyProgress moments={data.moments} />
         ) : (
           <>
             <ProgressDetails moments={[...data.moments].sort((a, b) => a.order - b.order)} />
@@ -67,7 +68,11 @@ function TrendsCard({ trends }: { trends: Trends }) {
   );
 }
 
-function EmptyProgress({ startHref }: { startHref: string }) {
+function EmptyProgress({ moments }: { moments: MomentProgress[] }) {
+  const lectures = lectureMoments(moments);
+  const startId = currentMomentId(lectures) ?? moments[0]?.id ?? '';
+  const startLecture = lectures.findIndex((m) => m.id === startId) + 1;
+  const startHref = `/moments/${startId}/learn`;
   return (
     <>
       <HeroCard className="flex flex-col items-center px-6 pt-7 pb-8 text-center">
@@ -78,25 +83,27 @@ function EmptyProgress({ startHref }: { startHref: string }) {
         <p className="mt-2 text-[14px]">{t.progress.emptyBody}</p>
       </HeroCard>
       <ButtonLink to={startHref} block className="mt-3">
-        {t.progress.startPractising}
+        {startLecture > 0 ? t.lecture.start(startLecture) : t.progress.startPractising}
       </ButtonLink>
     </>
   );
 }
 
 function ProgressDetails({ moments }: { moments: MomentProgress[] }) {
-  const done = doneCount(moments);
+  const lectures = lectureMoments(moments);
+  const anytime = moments.filter((m) => m.kind !== 'programme');
+  const done = doneCount(lectures);
   return (
     <>
       <HeroCard className="px-4 pt-2.5 pb-3.5">
         <p className="flex items-baseline gap-2">
           <span className="text-[40px] leading-none font-bold">{done}</span>
-          <span className="text-[15px] font-bold">{t.progress.momentsDone(moments.length)}</span>
+          <span className="text-[15px] font-bold">{t.lecture.ofLectures(lectures.length)}</span>
         </p>
         <SegmentedProgress
           className="mt-3"
-          segments={moments.map((m) => (m.status === 'done' ? 'done' : 'idle'))}
-          label={`${done} ${t.progress.momentsDone(moments.length)}`}
+          segments={lectures.map((m) => (m.status === 'done' ? 'done' : 'idle'))}
+          label={t.lecture.doneCount(done, lectures.length)}
         />
       </HeroCard>
 
@@ -115,21 +122,40 @@ function ProgressDetails({ moments }: { moments: MomentProgress[] }) {
       </div>
 
       <ul className="mt-3 flex flex-col gap-3">
-        {moments.map((m) => (
-          <MomentRow key={m.id} moment={m} />
+        {lectures.map((m, i) => (
+          <MomentRow key={m.id} moment={m} lecture={i + 1} />
         ))}
       </ul>
+      {anytime.length > 0 && (
+        <>
+          <h2 className="mt-5 text-[16px] font-bold">{t.progress.anytimeHeading}</h2>
+          <ul className="mt-3 flex flex-col gap-3">
+            {anytime.map((m) => (
+              <MomentRow key={m.id} moment={m} lecture={null} />
+            ))}
+          </ul>
+        </>
+      )}
       <p className="mt-5 text-center text-[14px] text-ink-2">{t.progress.privacy}</p>
     </>
   );
 }
 
-const MomentRow = memo(function MomentRow({ moment: m }: { moment: MomentProgress }) {
+/** "Lecture 2" above a programme moment's title. */
+function LectureEyebrow({ lecture }: { lecture: number | null }) {
+  if (!lecture) return null;
+  return <span className="block text-[11.5px] leading-[15px] font-extrabold tracking-[0.06em] text-ink-2 uppercase">{t.lecture.name(lecture)}</span>;
+}
+
+const MomentRow = memo(function MomentRow({ moment: m, lecture }: { moment: MomentProgress; lecture: number | null }) {
   if (m.status === 'locked') {
     return (
       <li className="flex items-center gap-2.5 rounded-[26px] border border-dashed border-line bg-mist py-2 pr-4 pl-2">
         <MomentGlyph icon={m.icon} size={32} className="opacity-60 grayscale" />
-        <span className="flex-1 text-[15.5px] font-semibold text-ink-2">{m.title}</span>
+        <span className="min-w-0 flex-1">
+          <LectureEyebrow lecture={lecture} />
+          <span className="block text-[15.5px] font-semibold text-ink-2">{m.title}</span>
+        </span>
         <span className="text-[13px] font-semibold text-ink-2">{t.progress.locked}</span>
       </li>
     );
@@ -140,7 +166,10 @@ const MomentRow = memo(function MomentRow({ moment: m }: { moment: MomentProgres
     return (
       <li className="flex items-center gap-2.5 rounded-[26px] border border-line py-2 pr-4 pl-2">
         <MomentGlyph icon={m.icon} size={32} />
-        <span className="flex-1 text-[15.5px] font-bold">{m.title}</span>
+        <span className="min-w-0 flex-1">
+          <LectureEyebrow lecture={lecture} />
+          <span className="block text-[15.5px] font-bold">{m.title}</span>
+        </span>
         <Pill tone={m.status === 'in_progress' ? 'sky' : 'mist'} className="text-[13px]">
           {label}
         </Pill>
@@ -158,6 +187,7 @@ const MomentRow = memo(function MomentRow({ moment: m }: { moment: MomentProgres
       <div className="flex items-start justify-between gap-2">
         <MomentGlyph icon={m.icon} size={32} className="-ml-2" />
         <div className="min-w-0 flex-1">
+          <LectureEyebrow lecture={lecture} />
           <h3 className="text-[15.5px] leading-6 font-bold">{m.title}</h3>
           {compared && <p className="text-[13px] text-ink-2">{t.progress.practised(m.timesPractised)}</p>}
         </div>

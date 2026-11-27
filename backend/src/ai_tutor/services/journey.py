@@ -231,6 +231,7 @@ class Journey:
                     times_practised=len(done),
                     first_try=self.grammar(m, done[0]) if done else None,
                     latest=self.grammar(m, done[-1]) if done else None,
+                    character_name=m.character_name,
                 )
             )
         return ProgressOut(

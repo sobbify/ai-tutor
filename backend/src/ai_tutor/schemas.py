@@ -136,6 +136,7 @@ class MomentProgress(Camel):
     times_practised: int
     first_try: list[bool] | None
     latest: list[bool] | None
+    character_name: str | None = None
 
 
 class LearnerOut(Camel):

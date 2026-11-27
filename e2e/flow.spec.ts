@@ -42,17 +42,17 @@ test('day 0 to a finished moment, end to end', async ({ page }) => {
     await replyOnce(page);
   }
 
-  // Home: day 1 of the programme.
+  // Home: no lectures done yet; lecture 1 is opened up on the path.
   await expect(page.getByRole('heading', { name: 'Hi Priya!' })).toBeVisible();
-  await expect(page.getByText('Day 1 of 15 · Week 1: Drop-off and pick-up').first()).toBeVisible();
+  await expect(page.getByText('0 of 4 lectures done').first()).toBeVisible();
   await expectAccessible(page);
 
   // Learn → role-play.
-  await page.getByRole('link', { name: 'Start Morning Greeting at Drop-off' }).click();
+  await page.getByRole('link', { name: 'Morning Greeting at Drop-off, Part 1 · Learn, Key phrases and a tip, start here' }).click();
   await expect(page.getByRole('heading', { name: 'Drop-off: calm and clear' })).toBeVisible();
   await expectAccessible(page);
   await page.getByRole('button', { name: 'Start the Role-play' }).click();
-  await expect(page.getByText('Response 1 of 6')).toBeVisible();
+  await expect(page.getByText('Lecture 1 · Response 1 of 6')).toBeVisible();
   await expectAccessible(page);
 
   await replyOnce(page);
@@ -63,7 +63,7 @@ test('day 0 to a finished moment, end to end', async ({ page }) => {
   await page.getByRole('button', { name: 'Continue' }).click();
 
   for (let i = 2; i <= 6; i++) {
-    await expect(page.getByText(`Response ${i} of 6`)).toBeVisible();
+    await expect(page.getByText(`Lecture 1 · Response ${i} of 6`)).toBeVisible();
     await replyOnce(page);
     await page.getByRole('button', { name: 'Continue' }).click();
   }
@@ -73,8 +73,8 @@ test('day 0 to a finished moment, end to end', async ({ page }) => {
   await page.getByRole('link', { name: 'See Summary' }).click();
   await expect(page.getByRole('heading', { name: 'Well done, Priya!' })).toBeVisible();
   // Snowflakes: XP for finishing, like Duolingo's end-of-lesson screen.
-  await expect(page.getByRole('heading', { name: 'You earned 15 snowflakes' })).toBeVisible();
-  await expect(page.getByText('35 snowflakes this week')).toBeVisible(); // first chat + this role-play + today's bonus
+  await expect(page.getByRole('heading', { name: 'You earned 15 snowflakes' })).toBeAttached();
+  await expect(page.getByText('35 this week')).toBeVisible(); // first chat + this role-play + today's bonus
   await expectAccessible(page);
 
   await page.goto('/progress');

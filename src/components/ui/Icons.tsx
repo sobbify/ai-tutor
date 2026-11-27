@@ -82,6 +82,11 @@ export const SpeakingBarsIcon = (p: IconProps) => (
     <path d="M4 10v4M9 7v10M14 9v6M19 6v12" />
   </Icon>
 );
+export const StarIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="m12 3.5 2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.2-4.1 5.8-.8Z" />
+  </Icon>
+);
 export const BookIcon = (p: IconProps) => (
   <Icon {...p}>
     <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5z" />

@@ -3,19 +3,20 @@ import { Link } from "react-router";
 import { t } from "@/i18n";
 import { cn } from "@/lib/cn";
 import type { MomentProgress } from "@/types/tutor";
-import { CheckIcon, LockIcon, MicIcon } from "@/components/ui/Icons";
+import { CheckIcon, ChevronRightIcon, LockIcon, MicIcon } from "@/components/ui/Icons";
 import { Face } from "@/features/conversation/Portrait";
-import { buildPath, type PathNode, type PathUnit } from "./path";
+import { buildLectures, momentHref, type Lecture, type PathNode } from "./path";
 
 /**
- * The 3-week programme as a Duolingo-style path: a coloured banner per week, chunky round steps
- * that wind left and right, a bobbing "Start" bubble on the next step with a ring for lines done,
- * and a treasure chest that opens when the week is finished. ELSA cheers from beside the path.
+ * The programme as lectures, Duolingo-style. The lecture she is on opens up: a coloured lecture
+ * card, then chunky round steps for its two parts (Learn, then the role-play) that wind left and
+ * right, a bobbing "Start" bubble with a ring for lines done, and the lecture's reward chest.
+ * ELSA cheers from beside the path. Every other lecture is a one-line row: done, ready or locked.
  */
 interface Palette {
   fill: string; // step colour (icons on white)
   lip: string; // the 3D edge under a step
-  banner: string; // banner background (white text passes AA); also the START tag text in light mode
+  banner: string; // card background (white text passes AA); also the START tag text in light mode
   tagDark: string; // START tag text on the dark surface (passes AA)
 }
 
@@ -25,15 +26,18 @@ const BLUE: Palette = {
   banner: "#126bc0",
   tagDark: "#5cb0ff",
 };
-const WEEK_COLOURS: Palette[] = [
+/** One colour per lecture (repeats after five). */
+const LECTURE_COLOURS: Palette[] = [
   BLUE,
   { fill: "#7c45d6", lip: "#5a2fa6", banner: "#6b38c4", tagDark: "#b590f5" },
   { fill: "#e0336f", lip: "#b0204f", banner: "#c8285e", tagDark: "#ff86ad" },
+  { fill: "#23b357", lip: "#178a41", banner: "#0b7a55", tagDark: "#5fd99a" },
+  { fill: "#f59e0b", lip: "#c07a08", banner: "#a85a08", tagDark: "#fcc163" },
 ];
+const coloursFor = (n: number) => LECTURE_COLOURS[(n - 1) % LECTURE_COLOURS.length] ?? BLUE;
 
-/** Horizontal wiggle of the path, in px from the centre line (repeats). */
 /** Sideways sway of each step, as a fraction of the widest swing. */
-const WIGGLE = [0, 0.68, 1, 0.68, 0, -0.68, -1, -0.68];
+const WIGGLE = [-0.68, 0.68, -0.3];
 /**
  * The widest swing shrinks on narrow phones so captions and ELSA always fit:
  * 82px from a 432px-wide path, down to 30px on a 360px phone (cqw = path width).
@@ -43,88 +47,126 @@ const ELSA = { name: "ELSA", role: "Coach", initials: "EL", posterUrl: null };
 
 export const ProgrammePath = memo(function ProgrammePath({
   moments,
-  daysPractised,
 }: {
   moments: MomentProgress[];
-  daysPractised: number;
 }) {
-  const units = buildPath(moments, daysPractised);
-  const allDone = units.every((u) => u.nodes.every((n) => n.state === "done"));
-  let index = 0;
+  const lectures = buildLectures(moments);
+  const allDone = lectures.length > 0 && lectures.every((l) => l.state === "done");
+  const certificate = lectures[lectures.length - 1]?.nodes.find((n) => n.kind === "chest");
   return (
-    <section
-      aria-label={t.path.label}
-      className="mt-2 flex flex-col gap-7 px-4 pb-4"
-    >
-      {units.map((unit, u) => {
-        const colours = WEEK_COLOURS[u % WEEK_COLOURS.length] ?? BLUE;
-        const start = index;
-        index += unit.nodes.length;
-        return (
-          <Unit
-            key={unit.week}
-            unit={unit}
-            colours={colours}
-            offset={start}
-            finished={allDone && u === units.length - 1}
-          />
-        );
-      })}
+    <section aria-label={t.path.label} className="mt-2 flex flex-col gap-2.5 px-4 pb-4">
+      {lectures.map((lecture) =>
+        lecture.state === "active" ? (
+          <ActiveLecture key={lecture.moment.id} lecture={lecture} colours={coloursFor(lecture.number)} />
+        ) : (
+          <LectureRow key={lecture.moment.id} lecture={lecture} colours={coloursFor(lecture.number)} />
+        ),
+      )}
+      {allDone && certificate?.to && (
+        <ol className="@container relative mt-4 flex flex-col items-center">
+          <Step node={{ ...certificate, label: t.lecture.allDone, sub: t.lecture.allDoneSub }} colours={BLUE} x={0} cheer="done" />
+        </ol>
+      )}
     </section>
   );
 });
 
-function Unit({
-  unit,
-  colours,
-  offset,
-  finished,
-}: {
-  unit: PathUnit;
-  colours: Palette;
-  offset: number;
-  finished: boolean;
-}) {
+/** The lecture she is on: its card, both parts and its reward. */
+function ActiveLecture({ lecture, colours }: { lecture: Lecture; colours: Palette }) {
   return (
-    <div>
-      <header
-        className="flex items-center gap-3 rounded-[18px] px-4 py-3 text-white shadow-soft"
-        style={{
-          background: unit.locked
-            ? "var(--path-locked-banner)"
-            : colours.banner,
-        }}
-      >
-        <div className="min-w-0 flex-1">
-          <p className="text-[12.5px] font-extrabold tracking-[0.08em] uppercase">
-            {t.path.week(unit.week)}
-          </p>
-          <h3 className="text-[18px] leading-6 font-extrabold">{unit.title}</h3>
-        </div>
-        <span className="shrink-0 rounded-full bg-black/15 px-3 py-1 text-[13px] font-extrabold">
-          {unit.locked
-            ? t.path.weekLocked
-            : t.path.days(unit.daysDone, unit.daysTotal)}
-        </span>
-      </header>
-
-      <ol className="@container relative mt-6 flex flex-col items-center gap-[30px]">
-        {unit.nodes.map((node, i) => (
+    <div className="my-2">
+      <LectureCard lecture={lecture} colours={colours} />
+      <ol className="@container relative mt-6 flex flex-col items-center gap-[30px] pb-2">
+        {lecture.nodes.map((node, i) => (
           <Step
             key={node.key}
             node={node}
             colours={colours}
-            x={WIGGLE[(offset + i) % WIGGLE.length] ?? 0}
-            cheer={
-              node.state === "current"
-                ? "go"
-                : finished && node.kind === "chest"
-                  ? "done"
-                  : null
-            }
+            x={WIGGLE[i % WIGGLE.length] ?? 0}
+            cheer={node.state === "current" ? "go" : null}
           />
         ))}
       </ol>
+    </div>
+  );
+}
+
+function LectureCard({ lecture, colours }: { lecture: Lecture; colours: Palette }) {
+  const m = lecture.moment;
+  return (
+    <header className="flex items-center gap-3 rounded-[18px] px-3.5 py-3 text-white shadow-soft" style={{ background: colours.banner }}>
+      <span className="flex h-[54px] w-[50px] shrink-0 flex-col items-center justify-center rounded-[14px] bg-black/15" aria-hidden="true">
+        <span className="text-[9.5px] leading-3 font-extrabold tracking-[0.1em]">{t.lecture.tile}</span>
+        <span className="text-[22px] leading-[26px] font-black">{String(lecture.number).padStart(2, "0")}</span>
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-[12px] leading-4 font-extrabold tracking-[0.08em] uppercase">
+          {t.lecture.of(lecture.number, lecture.total)}
+          {lecture.final && ` · ${t.lecture.final}`}
+        </p>
+        <h3 className="text-[17px] leading-[22px] font-extrabold break-words">{m.title}</h3>
+        <p className="mt-px text-[12.5px] leading-4 font-semibold opacity-90">
+          {m.characterName ? t.lecture.withWho(m.characterName) : t.lecture.twoParts}
+        </p>
+      </div>
+      <span className="shrink-0 rounded-full bg-black/15 px-2.5 py-1 text-[12.5px] font-extrabold whitespace-nowrap">
+        {t.lecture.parts(lecture.partsDone)}
+      </span>
+    </header>
+  );
+}
+
+/** Any other lecture, on one line: done (to its summary), ready (to its next step) or locked. */
+function LectureRow({ lecture, colours }: { lecture: Lecture; colours: Palette }) {
+  const m = lecture.moment;
+  const done = lecture.state === "done";
+  const locked = lecture.state === "locked";
+  const to = momentHref(m);
+  const stateWord = done ? t.lecture.done : locked ? t.lecture.locked : t.lecture.ready;
+  const body = (
+    <>
+      <span
+        className={cn("flex size-10 shrink-0 items-center justify-center rounded-[12px]", locked && "bg-[var(--path-off)] text-ink-2")}
+        style={locked ? undefined : { background: colours.banner, color: "#fff" }}
+        aria-hidden="true"
+      >
+        {done ? <CheckIcon size={20} strokeWidth={3.2} /> : <span className="text-[16px] font-black">{String(lecture.number).padStart(2, "0")}</span>}
+      </span>
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span className="text-[11.5px] leading-[15px] font-extrabold tracking-[0.06em] text-ink-2 uppercase">
+          {t.lecture.name(lecture.number)}
+          <span className="sr-only">: </span>
+        </span>
+        <span className={cn("text-[15px] leading-5 font-bold break-words", locked ? "text-ink-2" : "text-ink")}>
+          {m.title}
+          <span className="sr-only">, </span>
+        </span>
+      </span>
+      {done ? (
+        <span className="shrink-0 rounded-full bg-ok-bg px-2.5 py-0.5 text-[12.5px] font-bold text-ok">{t.lecture.done}</span>
+      ) : (
+        <>
+          <span className="sr-only">{stateWord}</span>
+          {locked ? (
+            <LockIcon size={18} className="shrink-0 text-[var(--path-off-ink)]" />
+          ) : (
+            <ChevronRightIcon size={18} className="shrink-0 text-ink-2" />
+          )}
+        </>
+      )}
+    </>
+  );
+  const cls = "flex items-center gap-3 rounded-[16px] border border-line bg-surface px-3 py-2.5";
+  const label = t.lecture.rowA11y(lecture.number, m.title, stateWord);
+  return to ? (
+    <Link viewTransition to={to} className={cn(cls, "hover:bg-sky/20")}>
+      {body}
+    </Link>
+  ) : (
+    <div role="img" aria-label={label} className={cls}>
+      <span className="contents" aria-hidden="true">
+        {body}
+      </span>
     </div>
   );
 }
@@ -146,7 +188,7 @@ function Step({
   const gap = node.state === "current" ? 22 : 12;
   const state = t.path.states[node.state] ?? node.state;
   const name = [
-    node.moment && node.kind !== "learn" ? node.moment.title : null,
+    node.moment ? node.moment.title : null,
     node.label,
     node.sub,
     state,

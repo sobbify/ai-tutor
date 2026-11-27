@@ -250,6 +250,7 @@ export function createMockApi({ storage = safeStorage(), latencyMs = 350, onboar
       timesPractised: done.length,
       firstTry: first ? grammarResults(m, first) : null,
       latest: last ? grammarResults(m, last) : null,
+      characterName: m.character.name,
     };
   };
 

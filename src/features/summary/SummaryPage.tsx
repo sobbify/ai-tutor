@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { Link, useNavigate, useParams } from 'react-router';
 import { t } from '@/i18n';
 import { useProgress, useStartRun, useSummary } from '@/hooks/queries';
 import { useBack } from '@/hooks/useBack';
@@ -12,12 +12,13 @@ import { Button, ButtonLink } from '@/components/ui/Button';
 import { HeroCard } from '@/components/ui/Card';
 import { Confetti } from '@/components/ui/Confetti';
 import { ChartIcon, CheckIcon, LockOpenIcon } from '@/components/ui/Icons';
-import { Pill } from '@/components/ui/Pill';
 import { SaveLineButton } from '@/components/ui/SaveLineButton';
 import { SpeakerButton } from '@/components/ui/SpeakerButton';
 import { CategoryBadge, HighlightedText, SaidTry } from '@/features/conversation/ChatBubbles';
 import { groupSlips, slipsOf } from '@/lib/slips';
 import type { JustFinishedState } from '@/features/conversation/useConversation';
+import { lectureNumber } from '@/features/journey/path';
+import { MomentGlyph } from '@/features/journey/MomentGlyph';
 import { SnowflakeReward } from './SnowflakeReward';
 
 /** Screens 12 (just finished) and 13 (revisit). */
@@ -40,6 +41,11 @@ export default function SummaryPage() {
 
   const nextId = summary.data?.nextMomentId ?? null;
   const next = progress.data?.moments.find((m) => m.id === nextId);
+  const moments = progress.data?.moments;
+  const lecture = lectureNumber(moments, momentId);
+  const unlocked = summary.data?.unlocked ?? null;
+  const unlockedMoment = unlocked ? moments?.find((m) => m.id === unlocked.id) : undefined;
+  const unlockedLecture = unlocked ? lectureNumber(moments, unlocked.id) : null;
   const nextHref = next && next.status !== 'locked' ? (next.status === 'done' ? `/moments/${next.id}/summary` : next.status === 'in_progress' ? `/moments/${next.id}` : `/moments/${next.id}/learn`) : null;
 
   return (
@@ -51,8 +57,24 @@ export default function SummaryPage() {
         <ErrorBlock error={summary.error} onRetry={refetch} />
       ) : (
         <main className="flex flex-1 flex-col px-5 pt-4 pb-[max(env(safe-area-inset-bottom),20px)]">
-          <SummaryHero summary={summary.data} justFinished={justFinished} firstName={progress.data?.learner.firstName ?? ''} />
+          <SummaryHero summary={summary.data} justFinished={justFinished} firstName={progress.data?.learner.firstName ?? ''} lecture={lecture} />
           {justFinished && summary.data.snowflakes && <SnowflakeReward snowflakes={summary.data.snowflakes} />}
+          {justFinished && unlocked && (
+            <Link
+              viewTransition
+              to={`/moments/${unlocked.id}/learn`}
+              className="mt-3 flex animate-rise items-center gap-3 rounded-[18px] border-2 border-header bg-surface px-3.5 py-3 hover:bg-sky/20"
+            >
+              {unlockedMoment && <MomentGlyph icon={unlockedMoment.icon} size={44} />}
+              <span className="min-w-0 flex-1">
+                <span className="block text-[12px] font-extrabold tracking-wide text-action uppercase">{t.lecture.nextOpen}</span>
+                <span className="block text-[16px] leading-[22px] font-extrabold break-words">
+                  {unlockedLecture ? t.lecture.nextTitle(unlockedLecture, unlocked.title) : t.summary.nowOpen(unlocked.title)}
+                </span>
+              </span>
+              <LockOpenIcon size={20} className="shrink-0 text-ok" />
+            </Link>
+          )}
           <ImprovedList summary={summary.data} />
           <PractiseList summary={summary.data} />
 
@@ -84,7 +106,7 @@ export default function SummaryPage() {
   );
 }
 
-function SummaryHero({ summary, justFinished, firstName }: { summary: Summary; justFinished: boolean; firstName: string }) {
+function SummaryHero({ summary, justFinished, firstName, lecture }: { summary: Summary; justFinished: boolean; firstName: string; lecture: number | null }) {
   return (
     <HeroCard className="relative flex flex-col items-center overflow-hidden px-5 pt-[18px] pb-5 text-center">
       {justFinished ? (
@@ -94,21 +116,15 @@ function SummaryHero({ summary, justFinished, firstName }: { summary: Summary; j
             <CheckIcon size={26} strokeWidth={3} />
           </span>
           <h2 className="mt-3 text-[22px] font-bold">{t.summary.wellDone(firstName)}</h2>
-          <p className="mt-1 text-[14.5px]">{t.summary.finished(summary.title)}</p>
-          {summary.unlocked && (
-            <Pill tone="ok" className="mt-3 animate-rise px-4 py-1.5 text-[15px] [animation-delay:500ms]">
-              <LockOpenIcon size={18} />
-              {t.summary.nowOpen(summary.unlocked.title)}
-            </Pill>
-          )}
+          <p className="mt-1 text-[14.5px]">{lecture ? t.lecture.finished(lecture, summary.title) : t.summary.finished(summary.title)}</p>
         </>
       ) : (
         <>
           <span className="flex size-[52px] items-center justify-center rounded-full bg-sky text-action" aria-hidden="true">
             <ChartIcon size={22} />
           </span>
-          <h2 className="mt-3 text-[22px] font-bold">{t.summary.yourSummary}</h2>
-          <p className="mt-1 text-[14.5px] leading-5">{t.summary.latestTry(summary.title)}</p>
+          <h2 className="mt-3 text-[22px] font-bold">{lecture ? t.lecture.yourSummary(lecture) : t.summary.yourSummary}</h2>
+          <p className="mt-1 text-[14.5px] leading-5">{lecture ? t.lecture.latestTry(lecture) : t.summary.latestTry(summary.title)}</p>
         </>
       )}
     </HeroCard>

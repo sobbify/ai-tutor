@@ -40,7 +40,7 @@ describe('Conversation', () => {
     const user = userEvent.setup();
     renderRoute('/moments/morning-greeting');
 
-    expect(await screen.findByText('Response 1 of 6')).toBeInTheDocument();
+    expect(await screen.findByText('Lecture 1 · Response 1 of 6')).toBeInTheDocument();
     expect(screen.getByRole('list', { name: 'Conversation so far' })).toHaveTextContent('Ria’s mother at the gate, in Ria’s first week of school.');
     expect(screen.getByText(/We will start with her favourite songs/)).toBeInTheDocument();
     expect(screen.getByText('Speaking only. We never judge your accent.')).toBeInTheDocument();
@@ -60,7 +60,7 @@ describe('Conversation', () => {
     expect(screen.getByRole('list', { name: 'Conversation so far' }).querySelector('mark')).toHaveTextContent('(mistake: settle)');
 
     await user.click(screen.getByRole('button', { name: 'Continue' }));
-    expect(await screen.findByText('Response 2 of 6')).toBeInTheDocument();
+    expect(await screen.findByText('Lecture 1 · Response 2 of 6')).toBeInTheDocument();
     expect(screen.queryByText('Speaking only. We never judge your accent.')).not.toBeInTheDocument();
   });
 
@@ -71,7 +71,7 @@ describe('Conversation', () => {
     await user.click(await screen.findByRole('button', { name: 'Say It Again' }));
     await speak(user, 'Don’t worry, she will settle in quickly.');
     expect(await screen.findAllByText('No grammar mistakes. Well said!')).not.toHaveLength(0);
-    expect(screen.getByText('Response 1 of 6')).toBeInTheDocument();
+    expect((await screen.findByText('Lecture 1 · Response 1 of 6'))).toBeInTheDocument();
   });
 
   it('asks to try again when nothing was heard', async () => {
@@ -95,7 +95,7 @@ describe('Conversation', () => {
     renderRoute('/moments/morning-greeting');
     await speak(user, null);
     await user.click(await screen.findByRole('button', { name: 'Continue' }));
-    await screen.findByText('Response 2 of 6');
+    await screen.findByText('Lecture 1 · Response 2 of 6');
     const chat = screen.getByRole('list', { name: 'Conversation so far' });
     expect(chat).toHaveTextContent('Good morning, Priya ma’am! Ria is a little nervous today.');
     expect(chat).toHaveTextContent(/Good morning\. Don’t worry, she \(mistake: settle\) quickly\./);
@@ -122,7 +122,7 @@ describe('Conversation', () => {
     const user = userEvent.setup();
     const { router } = renderRoute('/moments/morning-greeting');
     for (let i = 1; i <= 6; i++) {
-      await screen.findByText(`Response ${i} of 6`);
+      await screen.findByText(`Lecture 1 · Response ${i} of 6`);
       await speak(user, null);
       await user.click(await screen.findByRole('button', { name: 'Continue' }));
     }
@@ -131,13 +131,14 @@ describe('Conversation', () => {
 
     await user.click(screen.getByRole('link', { name: 'See Summary' }));
     expect(await screen.findByRole('heading', { name: 'Well done, Priya!' })).toBeInTheDocument();
-    expect(screen.queryByText(/is now open/)).not.toBeInTheDocument(); // pick-up was already open (same week)
+    expect(screen.getByText('You finished Lecture 1: Morning Greeting at Drop-off.')).toBeInTheDocument();
+    expect(screen.queryByText('Next lecture · now open')).not.toBeInTheDocument(); // pick-up was already open
     expect(screen.getByRole('heading', { name: /Sentences to Practise/ })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Next Moment' })).toHaveAttribute('href', '/moments/pickup-update/learn');
     await act(async () => {
       await router.navigate('/moments/morning-greeting/summary');
     });
-    expect(await screen.findByRole('heading', { name: 'Your Summary' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Lecture 1 · Your Summary' })).toBeInTheDocument();
   });
 
   it('typing fallback: type a reply instead of speaking, with a grammar tip', async () => {
@@ -203,7 +204,7 @@ describe('Conversation', () => {
     // Finish the role-play: the summary shows the line under "You Improved".
     await user.click(screen.getByRole('button', { name: 'Continue' }));
     for (let i = 2; i <= 6; i++) {
-      await screen.findByText(`Response ${i} of 6`);
+      await screen.findByText(`Lecture 1 · Response ${i} of 6`);
       await speak(user, 'Thank you ma’am, I will check today itself.');
       await user.click(await screen.findByRole('button', { name: 'Continue' }));
     }
