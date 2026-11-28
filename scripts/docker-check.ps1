@@ -18,7 +18,7 @@ Set-Content -Path $log -Value "ELSA docker check  $(Get-Date -Format s)" -Encodi
 function Say([string]$msg) { Write-Host $msg; Add-Content -Path $log -Value $msg -Encoding UTF8 }
 function Redact([string]$text) {
   $text = $text -replace 'AQ\.[A-Za-z0-9_\-]{10,}', 'AQ.***' -replace 'AIza[0-9A-Za-z_\-]{20,}', 'AIza***'
-  return ($text -replace '(POSTGRES_PASSWORD|GEMINI_API_KEYS|HOST_API_KEY)=\S+', '$1=***')
+  return ($text -replace '(POSTGRES_PASSWORD|GEMINI_API_KEYS|HOST_API_KEY|ENTRY_LINK_SECRET|ADMIN_BOOTSTRAP_PASSWORD)=\S+', '$1=***')
 }
 function Run([string]$title, [string]$cmd) {
   Say ""; Say "== $title =="; Say "> $cmd"
@@ -51,11 +51,19 @@ if (-not (Test-Path $envFile)) {
     "GEMINI_API_KEYS=$key",
     "EVALUATOR=$evaluator",
     "HOST_API_KEY=$(NewSecret 40)",
+    "ENTRY_LINK_SECRET=$(NewSecret 48)",
     'COOKIE_SECURE=true',
     'SCHOOL_TIMEZONE=Asia/Kolkata'
   ) | Set-Content -Path $envFile -Encoding ASCII
   Say ""; Say "Created .env (evaluator: $evaluator; Gemini key copied from backend\.env: $([bool]$key))"
-} else { Say ""; Say 'Using the existing .env' }
+} else {
+  Say ""; Say 'Using the existing .env'
+  # Older .env files predate signed links: add a secret once (production refuses to start without it).
+  if (-not (Select-String -Path $envFile -Pattern '^\s*ENTRY_LINK_SECRET\s*=\s*\S' -Quiet)) {
+    Add-Content -Path $envFile -Value "ENTRY_LINK_SECRET=$(NewSecret 48)" -Encoding ASCII
+    Say 'Added ENTRY_LINK_SECRET to .env'
+  }
+}
 
 # 3. Build and start.
 if ((Run 'build image' 'docker compose build --progress=plain') -ne 0) { Say 'BUILD FAILED - see docker-check.log'; exit 1 }
@@ -77,7 +85,9 @@ if ($ready) {
     Say "health: $(($h | ConvertTo-Json -Compress))"
     # The session cookie is Secure (as in production); browsers accept it on localhost but
     # PowerShell won't send it over http, so pass it along by hand.
-    $req = [System.Net.HttpWebRequest]::Create('http://localhost:8000/in?uid=docker-smoke-test&name=Docker%20Test')
+    # Entry links are signed in production: ask the app for a fresh one.
+    $link = (docker compose exec -T app python -m ai_tutor make-link docker-smoke-test "Docker Test" | Select-Object -Last 1).Trim()
+    $req = [System.Net.HttpWebRequest]::Create($link)
     $req.AllowAutoRedirect = $false
     $resp = $req.GetResponse()
     $cookie = ($resp.Headers['Set-Cookie'] -split ';')[0]
@@ -97,6 +107,6 @@ if ($ready) {
 Run 'containers' 'docker compose ps' | Out-Null
 Run 'app log (last 60 lines)' 'docker compose logs app --tail 60' | Out-Null
 Say ""
-Say 'Open http://localhost:8000/in?uid=test-teacher&name=Priya in Chrome to try it.'
+Say 'Try it: docker compose exec app python -m ai_tutor make-link test-teacher Priya   then open that link in Chrome (it works for 5 minutes).'
 Say 'Admin console: docker compose exec app python -m ai_tutor create-admin <username>  then  http://localhost:8000/admin'
 Say 'Stop:  docker compose down'

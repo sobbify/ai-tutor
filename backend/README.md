@@ -84,7 +84,7 @@ Or just run `python run.py` from the repo root.
 
 | | |
 | --- | --- |
-| `GET /in?uid=&name=` | creates or updates the learner, sets the cookie, then 303 → `/` |
+| `GET /in?uid=&name=[&centre=]&ts=&sig=` | checks the signed link (`ENTRY_LINK_SECRET`; unsigned only in development), creates or updates the learner, sets the cookie, then 303 → `/` |
 | `GET /api/me` · `POST /api/signout` | |
 | `GET /api/tutor/progress` | journey status, first-try/latest grammar per moment |
 | `GET /api/tutor/moments/{id}` | the script (no evaluator data) |

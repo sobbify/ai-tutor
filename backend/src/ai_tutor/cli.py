@@ -5,6 +5,7 @@ ai-tutor reset-admin-password <username>
 ai-tutor seed-content [--file PATH]     (loads moments.json if the moments table is empty)
 ai-tutor serve [--host H] [--port P]
 ai-tutor audio-check [--save FILE.wav]  (realtime voice + listening against real Gemini Live)
+ai-tutor make-link <uid> <name> [--centre C] [--base URL]   (a signed /in link, for testing)
 """
 
 from __future__ import annotations
@@ -14,6 +15,7 @@ import asyncio
 import getpass
 import sys
 from pathlib import Path
+from urllib.parse import urlencode
 
 from sqlalchemy import func, select
 
@@ -21,6 +23,7 @@ from .config import get_settings
 from .db import Database
 from .migrate import upgrade_to_head
 from .models import AdminUser
+from .security.links import signed_entry_url
 from .security.passwords import hash_password, password_problem
 from .services.content import seed_if_empty
 
@@ -97,6 +100,11 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--port", type=int, default=8000)
     p = sub.add_parser("audio-check")
     p.add_argument("--save", type=Path, default=None, help="also write the synthesised line to this WAV file")
+    p = sub.add_parser("make-link", help="print a signed /in link (valid for a few minutes)")
+    p.add_argument("uid")
+    p.add_argument("name")
+    p.add_argument("--centre", default=None)
+    p.add_argument("--base", default="http://localhost:8000")
     args = ap.parse_args(argv)
 
     if args.cmd in ("create-admin", "reset-admin-password"):
@@ -109,6 +117,15 @@ def main(argv: list[str] | None = None) -> int:
         from .migrate import upgrade_to_head
 
         upgrade_to_head(get_settings().database_url)
+        return 0
+    if args.cmd == "make-link":
+        settings = get_settings()
+        if not settings.entry_link_secret:
+            query = urlencode({"uid": args.uid, "name": args.name, **({"centre": args.centre} if args.centre else {})})
+            print(f"{args.base.rstrip('/')}/in?{query}")
+            print("(unsigned: ENTRY_LINK_SECRET is not set, so this works in development only)", file=sys.stderr)
+            return 0
+        print(signed_entry_url(args.base, settings.entry_link_secret, args.uid, args.name, args.centre))
         return 0
     if args.cmd == "admin-count":
         return asyncio.run(_admin_count())

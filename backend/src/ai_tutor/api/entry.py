@@ -1,4 +1,5 @@
-"""The door: the host app opens /in?uid=..&name=..[&centre=..] → HttpOnly session cookie → bare app URL."""
+"""The door: the host app opens a signed /in?uid=..&name=..[&centre=..]&ts=..&sig=.. → HttpOnly session cookie
+→ bare app URL. Unsigned links work only in development (see security/links.py)."""
 
 from __future__ import annotations
 
@@ -14,6 +15,7 @@ from ..deps import DB, CurrentLearner, client_ip, limit, state
 from ..logs import log
 from ..models import Learner, LearnerSession
 from ..schemas import EntryIn, MeOut
+from ..security.links import entry_problem
 from ..security.tokens import hash_token, new_token
 from .pages import message_page
 
@@ -25,10 +27,33 @@ NO_STORE = {"Cache-Control": "no-store", "Referrer-Policy": "no-referrer"}
 @router.get("/in", include_in_schema=False)
 @router.get("/in/", include_in_schema=False)
 async def enter(
-    request: Request, db: DB, uid: str | None = None, name: str | None = None, centre: str | None = None
+    request: Request,
+    db: DB,
+    uid: str | None = None,
+    name: str | None = None,
+    centre: str | None = None,
+    ts: str | None = None,
+    sig: str | None = None,
 ) -> Response:
     limit(request, "entry", client_ip(request))
     settings = state(request).settings
+    if settings.entry_link_secret:
+        problem = entry_problem(
+            settings.entry_link_secret,
+            uid or "",
+            name or "",
+            centre or None,
+            ts,
+            sig,
+            max_age=settings.entry_link_max_age_seconds,
+        )
+        if problem:
+            log.warning("entry_rejected", reason=problem)
+            return message_page(
+                403,
+                "This link has expired",
+                "For your privacy, ELSA links only work for a few minutes. Please open ELSA again from Buddy’s World.",
+            )
     try:
         entry = EntryIn(uid=uid or "", name=name or "", centre=centre or None)
     except ValidationError:

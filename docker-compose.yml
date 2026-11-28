@@ -5,6 +5,8 @@
 #   (Windows: scripts\docker-check.ps1 does all of this and smoke-tests the result)
 #   docker compose up -d --build
 #   docker compose exec app python -m ai_tutor create-admin <username>
+#     (or set ADMIN_BOOTSTRAP_USERNAME / ADMIN_BOOTSTRAP_PASSWORD in .env for the first start)
+#   docker compose exec app python -m ai_tutor make-link test-teacher Priya   → a signed sign-in link
 services:
   db:
     image: postgres:16-alpine
@@ -38,6 +40,10 @@ services:
       COOKIE_SECURE: ${COOKIE_SECURE:-true}
       SCHOOL_TIMEZONE: ${SCHOOL_TIMEZONE:-Asia/Kolkata}
       HOST_API_KEY: ${HOST_API_KEY:-}
+      ENTRY_LINK_SECRET: ${ENTRY_LINK_SECRET:?set ENTRY_LINK_SECRET in .env (32+ random characters)}
+      ADMIN_BOOTSTRAP_USERNAME: ${ADMIN_BOOTSTRAP_USERNAME:-}
+      ADMIN_BOOTSTRAP_PASSWORD: ${ADMIN_BOOTSTRAP_PASSWORD:-}
+      EMBED_ORIGINS: ${EMBED_ORIGINS:-}
     volumes:
       - voice:/app/backend/data/voice   # Gemini voice cache: recorded once, kept across deploys
     ports:

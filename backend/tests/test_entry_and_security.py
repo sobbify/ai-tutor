@@ -1,11 +1,16 @@
 from __future__ import annotations
 
+import time
+
 from fastapi.testclient import TestClient
 
 from ai_tutor.config import Settings
 from ai_tutor.main import create_app
+from ai_tutor.security.links import sign_entry, signed_entry_url
 
-from .conftest import CSRF, enter, make_settings
+from .conftest import ADMIN_PASSWORD, CSRF, enter, make_settings
+
+LINK_SECRET = "k" * 40
 
 
 def test_entry_sets_httponly_cookie_and_redirects_to_bare_url(client: TestClient) -> None:
@@ -98,9 +103,11 @@ def test_entry_rate_limited(tmp_path) -> None:  # type: ignore[no-untyped-def]
 
 
 def test_secure_cookie_and_hsts_in_production(tmp_path) -> None:  # type: ignore[no-untyped-def]
-    settings: Settings = make_settings(tmp_path, environment="production", allow_sqlite_in_production=True)
+    settings: Settings = make_settings(
+        tmp_path, environment="production", allow_sqlite_in_production=True, entry_link_secret=LINK_SECRET
+    )
     with TestClient(create_app(settings), base_url="https://tutor.example") as c:
-        r = c.get("/in", params={"uid": "t", "name": "A"}, follow_redirects=False)
+        r = c.get(signed_entry_url("https://tutor.example", LINK_SECRET, "t", "A", None), follow_redirects=False)
         assert "Secure" in r.headers["set-cookie"]
         assert "strict-transport-security" in r.headers
         assert c.get("/api/docs").status_code in (403, 404)
@@ -133,3 +140,67 @@ def test_oversized_request_rejected(learner: TestClient) -> None:
         headers={**CSRF, "Content-Length": str(50 * 1024 * 1024), "Content-Type": "application/octet-stream"},
     )
     assert r.status_code == 413
+
+
+def test_signed_links_are_required_when_a_secret_is_set(tmp_path) -> None:  # type: ignore[no-untyped-def]
+    settings = make_settings(tmp_path, entry_link_secret=LINK_SECRET)
+    with TestClient(create_app(settings)) as c:
+        # Unsigned, or signed with the wrong key, or edited after signing: refused, no cookie.
+        now = int(time.time())
+        bad = [
+            {"uid": "t-9", "name": "Priya"},
+            {"uid": "t-9", "name": "Priya", "ts": str(now), "sig": sign_entry("wrong-" * 8, "t-9", "Priya", None, now)},
+            {"uid": "t-10", "name": "Priya", "ts": str(now), "sig": sign_entry(LINK_SECRET, "t-9", "Priya", None, now)},
+            {"uid": "t-9", "name": "Priya", "ts": "soon", "sig": "x" * 64},
+        ]
+        for params in bad:
+            r = c.get("/in", params=params, follow_redirects=False)
+            assert r.status_code == 403 and "set-cookie" not in r.headers, params
+        # Too old (beyond the 5-minute window) or from the future.
+        for stamp in (now - 600, now + 600):
+            params = {
+                "uid": "t-9",
+                "name": "Priya",
+                "ts": str(stamp),
+                "sig": sign_entry(LINK_SECRET, "t-9", "Priya", None, stamp),
+            }
+            assert c.get("/in", params=params, follow_redirects=False).status_code == 403
+        # A fresh, correctly signed link (with a centre) gets in.
+        r = c.get(
+            signed_entry_url("http://testserver", LINK_SECRET, "t-9", "Priya Sharma", "pune-01"), follow_redirects=False
+        )
+        assert r.status_code == 303 and "ai_tutor_session=" in r.headers["set-cookie"]
+        assert c.get("/api/me").json()["name"] == "Priya Sharma"
+
+
+def test_first_admin_from_environment(tmp_path) -> None:  # type: ignore[no-untyped-def]
+    settings = make_settings(tmp_path, admin_bootstrap_username="ops", admin_bootstrap_password=ADMIN_PASSWORD)
+    with TestClient(create_app(settings)) as c:
+        r = c.post("/api/admin/login", json={"username": "ops", "password": ADMIN_PASSWORD}, headers=CSRF)
+        assert r.status_code == 200, r.text
+    # Never overwrites: a second start with another password changes nothing.
+    again = make_settings(
+        tmp_path / "again",
+        database_url=settings.database_url,
+        admin_bootstrap_username="ops",
+        admin_bootstrap_password="Another-Pass-123",
+    )
+    with TestClient(create_app(again)) as c:
+        assert (
+            c.post(
+                "/api/admin/login", json={"username": "ops", "password": "Another-Pass-123"}, headers=CSRF
+            ).status_code
+            == 401
+        )
+        assert (
+            c.post("/api/admin/login", json={"username": "ops", "password": ADMIN_PASSWORD}, headers=CSRF).status_code
+            == 200
+        )
+
+
+def test_weak_bootstrap_password_is_ignored(tmp_path) -> None:  # type: ignore[no-untyped-def]
+    settings = make_settings(tmp_path, admin_bootstrap_username="ops", admin_bootstrap_password="short")
+    with TestClient(create_app(settings)) as c:
+        assert (
+            c.post("/api/admin/login", json={"username": "ops", "password": "short"}, headers=CSRF).status_code == 401
+        )

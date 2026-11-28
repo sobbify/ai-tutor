@@ -1,0 +1,42 @@
+# Render blueprint: ELSA (Docker) + PostgreSQL, in Singapore (closest region to India).
+# New → Blueprint → pick this repo. Render asks for the values marked sync: false.
+# Render serves HTTPS, so the Secure session cookie works as is. See docs/DEPLOY.md.
+# If Buddy's World shows ELSA in an <iframe>, add EMBED_ORIGINS=https://<its origin> in the dashboard.
+services:
+  - type: web
+    name: elsa
+    runtime: docker
+    region: singapore
+    plan: starter
+    healthCheckPath: /api/ready
+    autoDeploy: true
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: PORT
+        value: "8000"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: elsa-db
+          property: connectionString
+      - key: ENTRY_LINK_SECRET # share with Buddy's World's server (docs/HOST-INTEGRATION.md)
+        generateValue: true
+      - key: HOST_API_KEY # Buddy's World's key for GET /api/host/nudges
+        generateValue: true
+      - key: GEMINI_API_KEYS # billed key(s), comma-separated
+        sync: false
+      - key: ADMIN_BOOTSTRAP_USERNAME # first admin, created on the first start; then delete both
+        sync: false
+      - key: ADMIN_BOOTSTRAP_PASSWORD
+        sync: false
+      - key: EVALUATOR
+        value: gemini
+      - key: SCHOOL_TIMEZONE
+        value: Asia/Kolkata
+
+databases:
+  - name: elsa-db
+    region: singapore
+    plan: basic-256mb
+    databaseName: tutor
+    user: tutor

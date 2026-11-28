@@ -24,6 +24,7 @@ from .logs import configure_logging, log
 from .migrate import upgrade_to_head
 from .security.ratelimit import RateLimiter
 from .services.admin import upgrade_content
+from .services.bootstrap import bootstrap_admin
 from .services.content import seed_if_empty
 from .services.evaluator import Evaluator, GeminiEvaluator, RuleBasedEvaluator
 from .services.keys import KeyPool, model_list, parse_keys
@@ -110,6 +111,7 @@ def create_app(
         async with db.sessionmaker() as session:
             seeded = await seed_if_empty(session, settings.content_file)
             upgraded = 0 if seeded else await upgrade_content(session, settings.content_file)
+            await bootstrap_admin(session, settings.admin_bootstrap_username, settings.admin_bootstrap_password)
             await session.commit()
         log.info(
             "startup",

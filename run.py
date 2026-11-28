@@ -21,6 +21,7 @@ from __future__ import annotations
 import argparse
 import contextlib
 import getpass
+import json
 import os
 import shutil
 import signal
@@ -110,6 +111,7 @@ def ensure_python_deps() -> None:
     needed = (
         "aiosqlite",
         "alembic",
+        "asyncpg",
         "dotenv",
         "fastapi",
         "google.genai",
@@ -161,9 +163,25 @@ def ensure_node_deps() -> None:
             f"Node.js 20.19+ is needed (found {out.stdout.strip()}). Install Node.js 22 from https://nodejs.org",
         )
         sys.exit(1)
-    if not (ROOT / "node_modules").exists():
-        say("run", "Installing frontend packages (npm install)…")
+    missing = missing_node_packages()
+    if missing:
+        # First run, or package.json gained a package since the last install (a pull or an
+        # update): a stale node_modules makes the build fail with "Failed to resolve import".
+        what = "frontend packages" if len(missing) > 5 else ", ".join(missing)
+        say("run", f"Installing {what} (npm install)…")
         subprocess.check_call([npm(), "install", "--no-audit", "--no-fund"], cwd=ROOT)
+
+
+def missing_node_packages() -> list[str]:
+    """Packages package.json lists that node_modules doesn't have."""
+    try:
+        manifest = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
+    names = [*manifest.get("dependencies", {}), *manifest.get("devDependencies", {})]
+    return [
+        n for n in names if not (ROOT / "node_modules" / n / "package.json").exists()
+    ]
 
 
 def cli(*args: str, stdin: str | None = None) -> int:

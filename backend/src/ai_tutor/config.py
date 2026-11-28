@@ -57,6 +57,14 @@ class Settings(BaseSettings):
     # Empty = the feed is off.
     host_api_key: str = ""
 
+    # Signed entry links: Buddy's World opens /in?uid=..&name=..[&centre=..]&ts=<unix s>&sig=<hex> where
+    # sig = HMAC-SHA256(ENTRY_LINK_SECRET, "uid\nname\ncentre\nts") (docs/HOST-INTEGRATION.md). Required in
+    # production; empty in development = unsigned links are accepted.
+    entry_link_secret: str = ""
+    entry_link_max_age_seconds: int = 300
+    # Production escape hatch for a closed demo with no host app. Never on a real server.
+    allow_unsigned_entry: bool = False
+
     # Learner sessions: the host app opens /in?uid=..&name=.. → HttpOnly cookie
     session_cookie: str = "ai_tutor_session"
     session_ttl_hours: float = 24 * 7  # sliding: renewed while the learner is active
@@ -70,6 +78,10 @@ class Settings(BaseSettings):
     admin_login_per_minute_ip: int = 5
     lockout_after_failures: int = 8
     lockout_minutes: int = 15
+    # First admin for container deployments (Docker, Render): created at startup when no admin
+    # exists yet, then ignored. Remove both once you have signed in.
+    admin_bootstrap_username: str = ""
+    admin_bootstrap_password: str = ""
 
     # Limits
     reply_rate_per_minute: int = 20
@@ -112,6 +124,17 @@ class Settings(BaseSettings):
         if production and not self.database_url.startswith("postgresql"):
             raise ValueError(
                 "Production needs PostgreSQL: set DATABASE_URL to postgresql://… (SQLite is for development only)."
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _signed_entry_in_production(self) -> Settings:
+        if self.environment != "production" or self.allow_unsigned_entry:
+            return self
+        if len(self.entry_link_secret) < 32:
+            raise ValueError(
+                "Production needs signed entry links: set ENTRY_LINK_SECRET to a random string of 32+ characters "
+                "and share it with Buddy's World (docs/HOST-INTEGRATION.md)."
             )
         return self
 

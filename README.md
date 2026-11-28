@@ -55,26 +55,29 @@ To clean up, run `python purge.py`. It removes what was installed or generated h
 
 ## How learners get in
 
-The host app opens:
+The host app opens a **signed** link (full spec and code samples: [`docs/HOST-INTEGRATION.md`](docs/HOST-INTEGRATION.md)):
 
 ```
-https://<server>/in?uid=<learner id>&name=<display name>&centre=<centre id>
+https://<server>/in?uid=<learner id>&name=<display name>&centre=<centre id>&ts=<unix seconds>&sig=<HMAC-SHA256>
 ```
+
+`sig` is the HMAC-SHA256 of `uid\nname\ncentre\nts` with the shared `ENTRY_LINK_SECRET`, and a link
+works for 5 minutes. Production refuses to start without a secret; in development, plain
+`/in?uid=…&name=…` links work. `python -m ai_tutor make-link <uid> <name>` prints a signed link for
+testing.
 
 `centre` is optional. Practice groups only mix teachers of the same centre, so a teacher whose
 link has no centre can't start or join a group.
 
-The backend checks both values, creates or updates that learner, and sets an HttpOnly session
-cookie. It then redirects to the bare app URL, so nothing stays in the address bar. There is no
-sign-in screen and no reports API back out. Without a valid cookie, pages show "Session not
-available — open ELSA again from the app". First-time teachers land on the Welcome screens.
+The backend checks the signature and both values, creates or updates that learner, and sets an
+HttpOnly session cookie. It then redirects to the bare app URL, so nothing stays in the address
+bar. There is no sign-in screen and no reports API back out. Without a valid cookie, pages show
+"Session not available — open ELSA again from the app". First-time teachers land on the Welcome
+screens.
 
 Reminders are sent by the host app: it polls `GET /api/host/nudges` with `Authorization: Bearer
 <HOST_API_KEY>` and gets `{"nudges":[{"uid","message"}]}` — each teacher at most once a day, at or
 after the time she chose, school days only, never after 8 pm.
-
-> There is no password yet: anyone who opens `/in` with a learner's uid becomes that learner.
-> That fits an app that controls the link. To close the gap later, sign the link (HMAC) or add a PIN.
 
 ## Database console (`/admin`)
 
@@ -163,8 +166,13 @@ work as given — `postgres://…` or `postgresql://…?sslmode=require` are con
 driver — and `GET /api/ready` reports `"database_kind": "postgresql"`. `docker compose up` runs
 PostgreSQL 16 next to the app.
 
+**Deploying:** [`docs/DEPLOY.md`](docs/DEPLOY.md) covers Docker Compose on a server (with HTTPS),
+the Render blueprint (`render.yaml`), the first admin, backups and a go-live checklist.
+
 ## Security
 
+- Signed, short-lived entry links (HMAC-SHA256, 5 minutes); production won't start without the
+  shared secret.
 - HttpOnly session cookies. Only SHA-256 token hashes are stored. Learner sessions expire after
   7 days of inactivity (30 days at most); admin sessions are separate and short.
 - CSRF protection: state-changing requests need `X-Requested-With` and a same-site `Origin`, and

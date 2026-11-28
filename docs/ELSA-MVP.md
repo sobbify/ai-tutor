@@ -27,7 +27,7 @@ Decisions taken with the product owner for this stage:
 
 | FR | Requirement | P | Status | Where |
 | --- | --- | --- | --- | --- |
-| 1 | Opens in Buddy's World with existing sign-in | P0 | ✅ | Host app opens `/in?uid=&name=[&centre=]` → HttpOnly cookie |
+| 1 | Opens in Buddy's World with existing sign-in | P0 | ✅ | Host app opens a signed `/in?uid=&name=[&centre=]&ts=&sig=` (HMAC, 5 min) → HttpOnly cookie; spec in `docs/HOST-INTEGRATION.md` |
 | 2 | Plain consent; keeping recordings optional | P0 | ✅ | `/welcome` step 1. Stricter than the PRD: audio is never recorded — it goes live to Gemini and only the transcript is kept |
 | 3 | Pick support language; English interface | P0 | ⏸ English only (decision) | — |
 | 4 | Friendly baseline chat, never shown as a score | P0 | ✅ | "Say Hello to ELSA" (3 lines, no feedback shown) → hidden profile |

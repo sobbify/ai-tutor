@@ -95,7 +95,14 @@ export default defineConfig(({ mode, command }) => {
           }
         : undefined,
     },
-    build: { target: 'es2022', sourcemap: true, cssCodeSplit: true },
+    build: {
+      target: 'es2022',
+      // No public source maps in the production build (the demo build keeps them for debugging).
+      sourcemap: mode !== 'production',
+      cssCodeSplit: true,
+      // The 3D avatar (three.js, ~900 kB) is its own lazy chunk, loaded only on the call screen.
+      chunkSizeWarningLimit: 1000,
+    },
     test: {
       globals: true,
       environment: 'jsdom',
