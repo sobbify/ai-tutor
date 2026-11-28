@@ -24,7 +24,8 @@ RUN useradd --system --uid 10001 --home /app tutor && mkdir -p /app/backend/data
 USER tutor
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-  CMD python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/api/ready', timeout=4).status == 200 else 1)"
+  CMD python -c "import os,urllib.request,sys; sys.exit(0 if urllib.request.urlopen(f'http://127.0.0.1:{os.environ.get(\"PORT\",\"8000\")}/api/ready', timeout=4).status == 200 else 1)"
 WORKDIR /app/backend
+# Listens on $PORT when the platform sets one (Railway, Render, Heroku-style hosts), else 8000.
 # No uvicorn access log: its request lines would include query strings (the app logs requests itself).
-CMD ["python", "-m", "uvicorn", "ai_tutor.asgi:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--forwarded-allow-ips", "*", "--no-access-log"]
+CMD ["sh", "-c", "exec python -m uvicorn ai_tutor.asgi:app --host 0.0.0.0 --port \"${PORT:-8000}\" --proxy-headers --forwarded-allow-ips '*' --no-access-log"]

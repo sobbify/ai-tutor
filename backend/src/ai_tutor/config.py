@@ -123,7 +123,8 @@ class Settings(BaseSettings):
         production = self.environment == "production" and not self.allow_sqlite_in_production
         if production and not self.database_url.startswith("postgresql"):
             raise ValueError(
-                "Production needs PostgreSQL: set DATABASE_URL to postgresql://… (SQLite is for development only)."
+                "Production needs PostgreSQL: set DATABASE_URL to postgresql://… (SQLite is for development only). "
+                "On Railway or Render, add a PostgreSQL database and point DATABASE_URL at it (docs/DEPLOY.md)."
             )
         return self
 

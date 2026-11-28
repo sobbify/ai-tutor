@@ -1,0 +1,13 @@
+# Railway: builds the Dockerfile and checks /api/ready before switching traffic.
+# Variables to set on the ELSA service (see docs/DEPLOY.md):
+#   DATABASE_URL=${{Postgres.DATABASE_URL}}   (add a PostgreSQL database to the project first)
+#   ENTRY_LINK_SECRET, GEMINI_API_KEYS, HOST_API_KEY, and ADMIN_BOOTSTRAP_* for the first start
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+healthcheckPath = "/api/ready"
+healthcheckTimeout = 120
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 5

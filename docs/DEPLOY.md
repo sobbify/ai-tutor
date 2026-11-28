@@ -25,6 +25,24 @@ uses WebSockets), so static hosts such as Vercel or Netlify can't run it.
 Check Render's current PostgreSQL plans for built-in backups. You can also download a JSON backup
 any time from the console (Settings).
 
+## Option A2: Railway
+
+`railway.toml` builds the Dockerfile and health-checks `/api/ready`. ELSA listens on Railway's
+`PORT` automatically.
+
+1. In the Railway project, add **New → Database → PostgreSQL** (next to the ELSA service).
+2. On the ELSA service, open **Variables** and add:
+   - `DATABASE_URL` = `${{Postgres.DATABASE_URL}}` (a reference to the database; Railway fills it in);
+   - `ENTRY_LINK_SECRET`: 32+ random characters, shared with Buddy's World;
+   - `GEMINI_API_KEYS`, and `HOST_API_KEY` if Buddy's World fetches reminders;
+   - `ADMIN_BOOTSTRAP_USERNAME` / `ADMIN_BOOTSTRAP_PASSWORD` for the first start (remove them afterwards).
+3. Deploy. If the deploy log shows "Production needs PostgreSQL" or "needs signed entry links",
+   a variable from step 2 is missing on the ELSA service (not just on the database).
+4. Make a test link from the service's shell (`railway ssh` or the dashboard's shell):
+   `python -m ai_tutor make-link test-teacher Priya --base https://<your-app>.up.railway.app`.
+
+Railway's own disk is wiped on every deploy, which is why ELSA keeps everything in PostgreSQL.
+
 ## Option B: Docker Compose on a server
 
 On any Linux VM with Docker (a small one, say 2 vCPU and 2 GB RAM, is a reasonable start for the pilot):
